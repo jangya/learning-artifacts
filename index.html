@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Artifacts — Evolving Ideas in Motion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #060816;
+        --bg-soft: #0f1730;
+        --panel: rgba(12, 21, 42, 0.82);
+        --panel-strong: rgba(15, 25, 50, 0.95);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: #f4f7ff;
+        --muted: #8fa4c4;
+        --cyan: #34d7ff;
+        --violet: #7c6cff;
+        --green: #37efb4;
+        --pink: #ff5fa2;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(52, 215, 255, 0.18),
+            transparent 24%
+          ),
+          radial-gradient(
+            circle at 85% 15%,
+            rgba(124, 108, 255, 0.24),
+            transparent 22%
+          ),
+          linear-gradient(135deg, #060816 0%, #091322 45%, #03060d 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.035) 1px,
+            transparent 1px
+          );
+        background-size: 34px 34px;
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.75),
+          transparent
+        );
+        pointer-events: none;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(20px);
+        opacity: 0.65;
+        animation: float 10s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .orb.one {
+        width: 260px;
+        height: 260px;
+        background: rgba(52, 215, 255, 0.24);
+        top: 8%;
+        left: -7%;
+      }
+      .orb.two {
+        width: 340px;
+        height: 340px;
+        background: rgba(124, 108, 255, 0.18);
+        right: -8%;
+        top: 30%;
+        animation-delay: 2s;
+      }
+      .orb.three {
+        width: 220px;
+        height: 220px;
+        background: rgba(55, 239, 180, 0.16);
+        bottom: 5%;
+        left: 35%;
+        animation-delay: 4s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) scale(1);
+        }
+        50% {
+          transform: translateY(-18px) scale(1.04);
+        }
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+
+      .hero {
+        padding: 48px;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: linear-gradient(
+          145deg,
+          rgba(15, 23, 48, 0.95),
+          rgba(8, 14, 30, 0.9)
+        );
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.05),
+          transparent
+        );
+        transform: translateX(-100%);
+        animation: sheen 8s linear infinite;
+      }
+
+      @keyframes sheen {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .eyebrow {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(52, 215, 255, 0.14);
+        color: var(--cyan);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4.5vw, 3.5rem);
+        line-height: 1.08;
+        margin: 0 0 16px;
+        letter-spacing: -0.03em;
+      }
+
+      .hero p {
+        color: var(--muted);
+        max-width: 760px;
+        font-size: 1.03rem;
+        line-height: 1.7;
+        margin: 0;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 28px;
+      }
+
+      .stat {
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+      }
+
+      .stat span {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      .section-title {
+        margin: 38px 0 16px;
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: linear-gradient(
+          145deg,
+          rgba(15, 25, 50, 0.95),
+          rgba(10, 17, 34, 0.9)
+        );
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        transition:
+          transform 180ms ease,
+          border-color 180ms ease;
+        min-height: 190px;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(52, 215, 255, 0.4);
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(52, 215, 255, 0.1),
+          transparent 45%,
+          rgba(124, 108, 255, 0.08)
+        );
+        pointer-events: none;
+      }
+
+      .card-icon {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+        color: var(--cyan);
+        font-weight: 700;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+      }
+
+      .card p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(55, 239, 180, 0.12);
+        color: #8ff0c8;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        padding: 10px 13px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--cyan), var(--violet));
+        color: white;
+        font-weight: 700;
+        font-size: 0.92rem;
+        box-shadow: 0 10px 24px rgba(52, 215, 255, 0.18);
+      }
+
+      .link-btn:hover {
+        filter: brightness(1.06);
+      }
+
+      .footer-note {
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 0.94rem;
+        text-align: center;
+      }
+
+      @media (max-width: 700px) {
+        .hero {
+          padding: 24px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .page {
+          padding: 24px 16px 56px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="orb one"></div>
+    <div class="orb two"></div>
+    <div class="orb three"></div>
+
+    <main class="page">
+      <section class="hero">
+        <div class="eyebrow">Learning • Exploring • Evolving</div>
+        <h1>
+          A living gallery of machine-learning ideas and interactive artifacts.
+        </h1>
+        <p>
+          This space grows like a model that learns from every new experiment.
+          Each artifact below is a small step in understanding how machines
+          reason, measure, and evolve through patterns.
+        </p>
+
+        <div class="stats">
+          <div class="stat">
+            <strong id="artifactCount">0</strong>
+            <span>Interactive artifacts</span>
+          </div>
+          <div class="stat">
+            <strong>UI-first</strong>
+            <span>Designed for clarity and delight</span>
+          </div>
+          <div class="stat">
+            <strong>GitHub Pages</strong>
+            <span>Ready to be shared online</span>
+          </div>
+        </div>
+      </section>
+
+      <h2 class="section-title">Featured artifacts</h2>
+      <section id="artifactGrid" class="grid"></section>
+
+      <p class="footer-note">
+        Every card below is linked to its own artifact page and expands as the
+        repository grows.
+      </p>
+    </main>
+
+    <script>
+      const artifacts = [
+        {
+          title: "Distance Metrics",
+          folder: "distance-metrics",
+          file: "distance-metrics/index.html",
+          description:
+            "A visual exploration of how machines compare, measure, and understand similarity between points and patterns.",
+          tag: "Similarity • Geometry",
+        },
+      ];
+
+      const grid = document.getElementById("artifactGrid");
+      const artifactCount = document.getElementById("artifactCount");
+
+      artifactCount.textContent = artifacts.length;
+
+      artifacts.forEach((artifact, index) => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+        <div class="pill">${artifact.tag}</div>
+        <div class="card-icon">${index + 1}.◎</div>
+        <h3>${artifact.title}</h3>
+        <p>${artifact.description}</p>
+        <a class="link-btn" href="${artifact.file}">Open artifact →</a>
+      `;
+        grid.appendChild(card);
+      });
+    </script>
+  </body>
+</html>
