@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distance Metrics — How Machines Measure the World</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f7;
+    --bg2: #ffffff;
+    --bg3: #ebebef;
+    --border: rgba(0,0,0,0.09);
+    --cyan: #0099a8;
+    --red: #e0294a;
+    --blue: #1a6fd4;
+    --green: #0aaa6a;
+    --yellow: #c48b00;
+    --text: #1a1a2e;
+    --muted: #7a7a9a;
+    --canvas-bg: #f0f0f8;
+    --canvas-dot: rgba(0,0,0,0.06);
+    --canvas-text: rgba(80,80,120,0.6);
+    --canvas-text2: rgba(80,80,120,0.4);
+    --flood-bg: #f0f0f8;
+    --flood-grid: rgba(0,0,0,0.04);
+    --flood-draw: #1a1a2e;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html.dark {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.08);
+    --cyan: #00c4cc;
+    --red: #ff4d6d;
+    --blue: #4d9fff;
+    --green: #4dffb0;
+    --yellow: #ffd166;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --canvas-bg: #0d0d18;
+    --canvas-dot: rgba(255,255,255,0.04);
+    --canvas-text: rgba(107,107,138,0.5);
+    --canvas-text2: rgba(107,107,138,0.35);
+    --flood-bg: #0d0d18;
+    --flood-grid: rgba(255,255,255,0.03);
+    --flood-draw: white;
+  }
+
+  *, *::before, *::after { transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0.8;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 7vw, 5.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--cyan);
+    position: relative;
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--muted);
+    max-width: 560px;
+    margin-bottom: 48px;
+    font-weight: 400;
+  }
+
+  .hero-paths {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 48px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .path-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .path-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .path-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    width: 90px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .path-svg-wrap {
+    flex: 1;
+    height: 40px;
+    position: relative;
+  }
+
+  .path-svg-wrap svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .formula-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .scroll-hint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  .scroll-hint svg { opacity: 0.5; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  .section-intro {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin-bottom: 48px;
+    max-width: 600px;
+  }
+
+  /* ─── INTERACTIVE CANVAS ─── */
+  .canvas-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .canvas-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .tool-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .tool-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .tool-btn.active { background: var(--cyan); color: var(--bg); border-color: var(--cyan); font-weight: 600; }
+  .tool-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  .canvas-hint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  #mainCanvas {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    cursor: crosshair;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+
+  .stat-card.active { border-color: var(--cyan); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-formula {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ─── CONCEPT CARDS ─── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .card:hover { transform: translateY(-4px); border-color: var(--cyan); }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .card p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .card .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── FLOOD FILL SECTION ─── */
+  .flood-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .flood-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .color-picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  input[type="color"] {
+    width: 36px; height: 36px;
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    padding: 2px;
+    background: var(--bg3);
+  }
+
+  .connectivity-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .conn-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 14px;
+    border: none;
+    background: var(--bg3);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .conn-btn.active { background: var(--cyan); color: var(--bg); font-weight: 600; }
+
+  #floodCanvas {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    cursor: crosshair;
+    border: 1px solid var(--border);
+    image-rendering: pixelated;
+  }
+
+  .flood-hint {
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ─── CONNECTIVITY EXPLAINER ─── */
+  .connectivity-explainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .conn-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    transition: border-color 0.2s;
+  }
+
+  .conn-card.highlight { border-color: var(--cyan); }
+
+  .conn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 22px);
+    grid-template-rows: repeat(3, 22px);
+    gap: 2px;
+  }
+
+  .cg-cell {
+    border-radius: 3px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .cg-cell.center { background: var(--cyan); color: var(--bg); font-size: 10px; border-color: var(--cyan); }
+  .cg-cell.neighbor { background: rgba(77,159,255,0.25); color: var(--blue); border-color: rgba(77,159,255,0.4); }
+  .cg-cell.neighbor8 { background: rgba(77,255,176,0.15); color: var(--green); border-color: rgba(77,255,176,0.3); }
+
+  .conn-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .conn-label small { color: var(--muted); font-size: 10px; }
+
+  .conn-vs {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0 24px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 48px 24px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ─── RULE BOX ─── */
+  .rule-box {
+    background: linear-gradient(135deg, rgba(0,245,255,0.05), rgba(77,159,255,0.05));
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 32px 0;
+    font-family: var(--font-mono);
+  }
+
+  .rule-box .rule-title {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .rule-box .rule-text {
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .rule-box .rule-text span {
+    color: var(--cyan);
+    font-weight: 600;
+  }
+
+  /* ─── THEME TOGGLE ─── */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .theme-toggle .toggle-track {
+    width: 32px;
+    height: 18px;
+    background: var(--bg3);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  html.dark .theme-toggle .toggle-track {
+    background: var(--cyan);
+  }
+
+  .theme-toggle .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.3s, background 0.3s;
+  }
+
+  html.dark .theme-toggle .toggle-thumb {
+    transform: translateX(14px);
+    background: white;
+  }
+
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .canvas-hint { display: none; }
+    .path-label { width: 60px; font-size: 10px; }
+    .formula-badge { font-size: 9px; padding: 2px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════ -->
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+  <span id="themeIcon">🌙</span>
+  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  <span id="themeLabel">DARK</span>
+</button>
+
+<div class="hero">
+  <p class="hero-eyebrow">// distance_metrics.js</p>
+  <h1>How Machines<br>Measure the <em>World</em></h1>
+  <p class="hero-sub">
+    Same two points. Three completely different distances.
+    This single idea powers GPS, AI clustering, robotics, and your paint bucket tool.
+  </p>
+
+  <!-- Visual path comparison -->
+  <div class="hero-paths">
+
+    <!-- Zigzag -->
+    <div class="path-row">
+      <div class="path-dot" style="background:var(--red)"></div>
+      <div class="path-label" style="color:var(--red)">zigzag</div>
+      <div class="path-svg-wrap">
+        <svg viewBox="0 0 300 40" preserveAspectRatio="none">
+          <path d="M10,20 L50,5 L90,35 L130,8 L170,32 L210,10 L250,28 L290,20"
+                fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="20" r="4" fill="var(--red)"/>
+          <circle cx="290" cy="20" r="4" fill="var(--red)"/>
+        </svg>
+      </div>
+      <div class="formula-badge" style="background:rgba(255,77,109,0.1);color:var(--red);border:1px solid rgba(255,77,109,0.3)">Σ segments</div>
+    </div>
+
+    <!-- Manhattan -->
+    <div class="path-row">
+      <div class="path-dot" style="background:var(--blue)"></div>
+      <div class="path-label" style="color:var(--blue)">manhattan</div>
+      <div class="path-svg-wrap">
+        <svg viewBox="0 0 300 40" preserveAspectRatio="none">
+          <path d="M10,20 L10,5 L80,5 L80,35 L160,35 L160,5 L240,5 L240,20 L290,20"
+                fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="20" r="4" fill="var(--blue)"/>
+          <circle cx="290" cy="20" r="4" fill="var(--blue)"/>
+        </svg>
+      </div>
+      <div class="formula-badge" style="background:rgba(77,159,255,0.1);color:var(--blue);border:1px solid rgba(77,159,255,0.3)">|Δx|+|Δy|</div>
+    </div>
+
+    <!-- Euclidean -->
+    <div class="path-row">
+      <div class="path-dot" style="background:var(--green)"></div>
+      <div class="path-label" style="color:var(--green)">euclidean</div>
+      <div class="path-svg-wrap">
+        <svg viewBox="0 0 300 40" preserveAspectRatio="none">
+          <line x1="10" y1="20" x2="290" y2="20"
+                stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="10" cy="20" r="4" fill="var(--green)"/>
+          <circle cx="290" cy="20" r="4" fill="var(--green)"/>
+        </svg>
+      </div>
+      <div class="formula-badge" style="background:rgba(77,255,176,0.1);color:var(--green);border:1px solid rgba(77,255,176,0.3)">√(Δx²+Δy²)</div>
+    </div>
+
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL TO EXPLORE</span>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3v10M3 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     INTERACTIVE CANVAS
+════════════════════════════════════════════════ -->
+<section id="demo">
+  <p class="section-eyebrow">// interactive_demo</p>
+  <h2>Draw Your Own Path</h2>
+  <p class="section-intro">
+    Click to place points and build a path. Watch all three distances update in real time.
+    The gap between them tells the whole story.
+  </p>
+
+  <div class="canvas-container">
+    <div class="canvas-toolbar">
+      <button class="tool-btn active" id="btnDraw" onclick="setMode('draw')">✏️ Draw</button>
+      <button class="tool-btn danger" onclick="clearCanvas()">⟳ Clear</button>
+      <button class="tool-btn" onclick="loadExample()">📐 Load Example</button>
+      <span class="canvas-hint">Click to add points · Double-click to finish</span>
+    </div>
+    <canvas id="mainCanvas" height="340"></canvas>
+
+    <div class="stats-grid">
+      <div class="stat-card" id="statZigzag">
+        <div class="stat-label" style="color:var(--red)">Zigzag Path</div>
+        <div class="stat-value" style="color:var(--red)" id="valZigzag">—</div>
+        <div class="stat-formula">Σ √(Δxᵢ² + Δyᵢ²)</div>
+      </div>
+      <div class="stat-card" id="statManhattan">
+        <div class="stat-label" style="color:var(--blue)">Manhattan</div>
+        <div class="stat-value" style="color:var(--blue)" id="valManhattan">—</div>
+        <div class="stat-formula">|x₂−x₁| + |y₂−y₁|</div>
+      </div>
+      <div class="stat-card" id="statEuclidean">
+        <div class="stat-label" style="color:var(--green)">Euclidean</div>
+        <div class="stat-value" style="color:var(--green)" id="valEuclidean">—</div>
+        <div class="stat-formula">√((x₂−x₁)² + (y₂−y₁)²)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <div class="rule-title">// The Golden Rule</div>
+    <div class="rule-text">
+      <span>Zigzag ≥ Manhattan ≥ Euclidean</span> — always.<br>
+      The straight line is the absolute shortest distance between any two points.
+      Every other path is longer or equal. No exceptions.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     WHERE IT LIVES IN THE REAL WORLD
+════════════════════════════════════════════════ -->
+<section id="applications">
+  <p class="section-eyebrow">// real_world_applications</p>
+  <h2>Foundation of Everything</h2>
+  <p class="section-intro">
+    This isn't just geometry. These three formulas quietly run inside the technology you use every day.
+  </p>
+
+  <div class="cards-grid">
+
+    <div class="card" style="border-top-color: var(--cyan)">
+      <div class="card::before" style="background:var(--cyan)"></div>
+      <span class="card-icon">🗺️</span>
+      <h3>GPS & Google Maps</h3>
+      <p>Real roads = sum of coordinate segments. But the routing engine uses Euclidean distance as a heuristic to decide <em>which roads to explore first</em>, making it fast.</p>
+      <span class="tag" style="background:rgba(0,245,255,0.1);color:var(--cyan)">EUCLIDEAN + PATH SUM</span>
+    </div>
+
+    <div class="card" style="border-top-color: var(--yellow)">
+      <span class="card-icon">🧠</span>
+      <h3>K-Means Clustering</h3>
+      <p>"Which cluster does this data point belong to?" = find the nearest center. That's Euclidean distance, computed millions of times per training step.</p>
+      <span class="tag" style="background:rgba(255,209,102,0.1);color:var(--yellow)">EUCLIDEAN</span>
+    </div>
+
+    <div class="card" style="border-top-color: var(--blue)">
+      <span class="card-icon">📦</span>
+      <h3>KNN & Recommendation</h3>
+      <p>Netflix finding similar users, Spotify suggesting songs — Manhattan distance works best when features are independent, like genres and play counts.</p>
+      <span class="tag" style="background:rgba(77,159,255,0.1);color:var(--blue)">MANHATTAN</span>
+    </div>
+
+    <div class="card" style="border-top-color: var(--green)">
+      <span class="card-icon">📉</span>
+      <h3>Neural Network Loss</h3>
+      <p>MSE (Mean Squared Error) is Euclidean distance squared between predictions and ground truth. Every backprop step is literally minimizing a distance.</p>
+      <span class="tag" style="background:rgba(77,255,176,0.1);color:var(--green)">EUCLIDEAN²</span>
+    </div>
+
+    <div class="card" style="border-top-color: var(--red)">
+      <span class="card-icon">🤖</span>
+      <h3>Robotics & A* Pathfinding</h3>
+      <p>The A* algorithm uses a distance heuristic to estimate cost-to-goal. Manhattan for grid robots, Euclidean for free-space robots. Wrong metric = broken paths.</p>
+      <span class="tag" style="background:rgba(255,77,109,0.1);color:var(--red)">HEURISTIC DISTANCE</span>
+    </div>
+
+    <div class="card" style="border-top-color: var(--cyan)">
+      <span class="card-icon">🎨</span>
+      <h3>Paint Bucket (Flood Fill)</h3>
+      <p>The tool you used in MS Paint as a kid. It spreads to neighboring pixels using distance-based connectivity. Scroll down to try the live demo ↓</p>
+      <span class="tag" style="background:rgba(0,245,255,0.1);color:var(--cyan)">MANHATTAN (4) / EUCLIDEAN (8)</span>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     FREE DRAW — FUN CANVAS
+════════════════════════════════════════════════ -->
+<section id="freedraw">
+  <p class="section-eyebrow">// free_draw.js</p>
+  <h2>Just Draw Something ✏️</h2>
+  <p class="section-intro">
+    No rules. Pick a brush size and color, draw freely. This is the same kind of canvas your paint bucket lives on — smooth, anti-aliased, human-drawn. Notice how different it feels from the pixel grid below.
+  </p>
+
+  <div class="canvas-container">
+    <div class="canvas-toolbar">
+      <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;color:var(--muted)">
+        🎨 <span>Color</span>
+        <input type="color" id="freeColor" value="#e0294a" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:var(--bg3)">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;color:var(--muted)">
+        <span>Size</span>
+        <input type="range" id="brushSize" min="2" max="32" value="6"
+          style="accent-color:var(--cyan);width:90px;cursor:pointer">
+        <span id="brushSizeLabel" style="color:var(--cyan);min-width:24px">6px</span>
+      </div>
+      <button class="tool-btn" id="freeBtnDraw" onclick="setFreeTool('draw')" style="background:var(--cyan);color:var(--bg);border-color:var(--cyan)">✏️ Draw</button>
+      <button class="tool-btn" id="freeBtnFill" onclick="setFreeTool('fill')">🪣 Fill</button>
+      <button class="tool-btn" id="freeBtnErase" onclick="setFreeTool('erase')">⌫ Erase</button>
+      <button class="tool-btn danger" onclick="clearFreeCanvas()">⟳ Clear</button>
+      <span class="canvas-hint">Just have fun — no rules here</span>
+    </div>
+    <canvas id="freeCanvas" style="border-radius:12px;cursor:crosshair;border:1px solid var(--border);display:block;width:100%;touch-action:none;"></canvas>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     FLOOD FILL
+════════════════════════════════════════════════ -->
+<section id="floodfill">
+  <p class="section-eyebrow">// flood_fill_demo</p>
+  <h2>The Paint Bucket Uses Distance Too</h2>
+  <p class="section-intro">
+    This pixel grid makes the difference <em>unmistakable</em>. Draw a diagonal wall, then try filling on both sides.
+    Switch connectivity and watch how the fill either leaks through corners or gets blocked.
+  </p>
+
+  <div class="flood-container">
+    <div class="flood-controls">
+      <button class="tool-btn active" id="btnFloodDraw" onclick="setFloodMode('wall')">🧱 Draw Wall</button>
+      <button class="tool-btn" id="btnFloodFill" onclick="setFloodMode('fill')">🪣 Fill</button>
+      <button class="tool-btn" id="btnFloodErase" onclick="setFloodMode('erase')">⌫ Erase</button>
+      <button class="tool-btn danger" onclick="clearFlood()">⟳ Clear</button>
+
+      <div class="color-picker-wrap">
+        <span>Fill color</span>
+        <input type="color" id="fillColor" value="#00f5ff">
+      </div>
+
+      <div class="connectivity-toggle">
+        <button class="conn-btn active" id="conn4" onclick="setConnectivity(4)" title="Up/Down/Left/Right only">4-conn ＋</button>
+        <button class="conn-btn" id="conn8" onclick="setConnectivity(8)" title="Includes diagonals">8-conn ✕</button>
+      </div>
+    </div>
+
+    <canvas id="floodCanvas"></canvas>
+
+    <div class="connectivity-explainer">
+      <div class="conn-card" id="connCard4">
+        <div class="conn-grid">
+          <div class="cg-cell"></div><div class="cg-cell neighbor">↑</div><div class="cg-cell"></div>
+          <div class="cg-cell neighbor">←</div><div class="cg-cell center">📍</div><div class="cg-cell neighbor">→</div>
+          <div class="cg-cell"></div><div class="cg-cell neighbor">↓</div><div class="cg-cell"></div>
+        </div>
+        <div class="conn-label">4-conn: <span style="color:var(--blue)">4 neighbors</span><br><small>Manhattan — no diagonals</small></div>
+      </div>
+      <div class="conn-vs">VS</div>
+      <div class="conn-card" id="connCard8">
+        <div class="conn-grid">
+          <div class="cg-cell neighbor8">↖</div><div class="cg-cell neighbor">↑</div><div class="cg-cell neighbor8">↗</div>
+          <div class="cg-cell neighbor">←</div><div class="cg-cell center">📍</div><div class="cg-cell neighbor">→</div>
+          <div class="cg-cell neighbor8">↙</div><div class="cg-cell neighbor">↓</div><div class="cg-cell neighbor8">↘</div>
+        </div>
+        <div class="conn-label">8-conn: <span style="color:var(--green)">8 neighbors</span><br><small>Euclidean — diagonals included</small></div>
+      </div>
+    </div>
+
+    <p class="flood-hint">
+      💡 Try this: draw a <strong>diagonal wall</strong> → fill one side → switch connectivity → fill again. The leak tells the whole story.
+    </p>
+  </div>
+
+  <div class="rule-box" style="margin-top: 32px">
+    <div class="rule-title">// Why connectivity matters</div>
+    <div class="rule-text">
+      With <span>4-connectivity</span>, a diagonal wall has corner gaps — fill leaks through.<br>
+      With <span>8-connectivity</span>, diagonals are sealed — fill stays contained.<br>
+      Same wall. Different distance rule. Completely different behavior.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════ -->
+<footer>
+  <p style="margin-bottom:8px">built with curiosity · no libraries · pure canvas API</p>
+  <p>distance_metrics.html · open source · <a href="https://github.com" target="_blank">github.com/jangya</a></p>
+</footer>
+
+
+<script>
+// ════════════════════════════════════════════
+// THEME TOGGLE
+// ════════════════════════════════════════════
+let isDark = false;
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.classList.toggle('dark', isDark);
+  document.getElementById('themeIcon').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('themeLabel').textContent = isDark ? 'DARK' : 'LIGHT';
+  drawMain();
+  drawFreeCanvas();
+  renderGrid();
+}
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ════════════════════════════════════════════
+// MAIN CANVAS — Distance Demo
+// ════════════════════════════════════════════
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+let points = [];
+let mode = 'draw';
+let finished = false;
+let hovering = null;
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = (rect.width - 48) * dpr;
+  canvas.height = 340 * dpr;
+  canvas.style.width = (rect.width - 48) + 'px';
+  canvas.style.height = '340px';
+  ctx.scale(dpr, dpr);
+  drawMain();
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('#btnDraw').forEach(b => b.classList.toggle('active', m === 'draw'));
+}
+
+function clearCanvas() {
+  points = [];
+  finished = false;
+  hovering = null;
+  updateStats(null);
+  drawMain();
+}
+
+function loadExample() {
+  clearCanvas();
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  points = [
+    {x: w*0.1, y: h*0.5},
+    {x: w*0.22, y: h*0.2},
+    {x: w*0.36, y: h*0.75},
+    {x: w*0.5, y: h*0.25},
+    {x: w*0.64, y: h*0.7},
+    {x: w*0.78, y: h*0.3},
+    {x: w*0.9, y: h*0.5},
+  ];
+  finished = true;
+  drawMain();
+  computeAndUpdate();
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+  const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+  return {x, y};
+}
+
+canvas.addEventListener('click', e => {
+  if (finished) { clearCanvas(); return; }
+  const p = getPos(e);
+  if (points.length > 0) {
+    const first = points[0];
+    if (Math.hypot(p.x - first.x, p.y - first.y) < 15 && points.length > 2) {
+      finished = true;
+      drawMain(); computeAndUpdate(); return;
+    }
+  }
+  points.push(p);
+  drawMain();
+  if (points.length >= 2) computeAndUpdate();
+});
+
+canvas.addEventListener('dblclick', e => {
+  if (points.length >= 2) { finished = true; drawMain(); computeAndUpdate(); }
+});
+
+canvas.addEventListener('mousemove', e => {
+  hovering = getPos(e);
+  if (!finished) drawMain();
+});
+
+canvas.addEventListener('mouseleave', () => { hovering = null; if (!finished) drawMain(); });
+
+function drawMain() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid dots
+  ctx.fillStyle = getCSSVar('--canvas-dot');
+  for (let x = 20; x < w; x += 40) {
+    for (let y = 20; y < h; y += 40) {
+      ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  if (points.length === 0) {
+    ctx.fillStyle = getCSSVar('--canvas-text');
+    ctx.font = '14px Space Grotesk';
+    ctx.textAlign = 'center';
+    ctx.fillText('Click anywhere to start placing points', w/2, h/2 - 10);
+    ctx.font = '12px JetBrains Mono';
+    ctx.fillStyle = getCSSVar('--canvas-text2');
+    ctx.fillText('double-click or click near start point to finish', w/2, h/2 + 16);
+    return;
+  }
+
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  // ── Euclidean (straight line, start→end) ──
+  if (points.length >= 2) {
+    const end = finished ? last : (hovering || last);
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = 'rgba(77,255,176,0.25)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ── Manhattan (first→end only) ──
+  if (points.length >= 2) {
+    const end = finished ? last : (hovering || last);
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    ctx.lineTo(end.x, first.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = 'rgba(77,159,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ── Zigzag path ──
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  if (!finished && hovering) ctx.lineTo(hovering.x, hovering.y);
+  ctx.strokeStyle = '#ff4d6d';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // ── Points ──
+  points.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, i === 0 || i === points.length - 1 ? 7 : 5, 0, Math.PI*2);
+    ctx.fillStyle = i === 0 ? '#fff' : '#ff4d6d';
+    ctx.fill();
+    if (i === 0) {
+      ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  });
+
+  // ── Hover indicator ──
+  if (!finished && hovering) {
+    ctx.beginPath();
+    ctx.arc(hovering.x, hovering.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,77,109,0.5)';
+    ctx.fill();
+    if (points.length > 2) {
+      const d = Math.hypot(hovering.x - first.x, hovering.y - first.y);
+      if (d < 15) {
+        ctx.beginPath(); ctx.arc(first.x, first.y, 12, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+      }
+    }
+  }
+
+  if (finished && points.length >= 2) {
+    // Labels
+    const mid = {
+      x: (first.x + last.x) / 2,
+      y: (first.y + last.y) / 2
+    };
+    ctx.font = 'bold 11px JetBrains Mono';
+    ctx.fillStyle = 'rgba(77,255,176,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Euclidean →', mid.x, Math.min(first.y, last.y) - 8);
+  }
+}
+
+function computeAndUpdate() {
+  if (points.length < 2) return;
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  // Zigzag = sum of all segments
+  let zigzag = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    zigzag += Math.hypot(points[i+1].x - points[i].x, points[i+1].y - points[i].y);
+  }
+
+  // Manhattan = first to last only
+  const manhattan = Math.abs(last.x - first.x) + Math.abs(last.y - first.y);
+
+  // Euclidean = first to last
+  const euclidean = Math.hypot(last.x - first.x, last.y - first.y);
+
+  updateStats({ zigzag, manhattan, euclidean });
+}
+
+function updateStats(vals) {
+  if (!vals) {
+    ['valZigzag','valManhattan','valEuclidean'].forEach(id => document.getElementById(id).textContent = '—');
+    ['statZigzag','statManhattan','statEuclidean'].forEach(id => document.getElementById(id).classList.remove('active'));
+    return;
+  }
+  document.getElementById('valZigzag').textContent = vals.zigzag.toFixed(1) + 'px';
+  document.getElementById('valManhattan').textContent = vals.manhattan.toFixed(1) + 'px';
+  document.getElementById('valEuclidean').textContent = vals.euclidean.toFixed(1) + 'px';
+  ['statZigzag','statManhattan','statEuclidean'].forEach(id => document.getElementById(id).classList.add('active'));
+}
+
+// ════════════════════════════════════════════
+// FREE DRAW CANVAS
+// ════════════════════════════════════════════
+
+const freeCanvas = document.getElementById('freeCanvas');
+const freeCtx = freeCanvas.getContext('2d');
+let freeTool = 'draw';
+let freeDrawing = false;
+let freeLastPos = null;
+let freeBgColor = '#f8f8fc'; // tracks current bg for eraser
+
+function initFreeCanvas() {
+  const rect = freeCanvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = rect.width - 48;
+  freeCanvas.width = w * dpr;
+  freeCanvas.height = 280 * dpr;
+  freeCanvas.style.width = w + 'px';
+  freeCanvas.style.height = '280px';
+  freeCtx.scale(dpr, dpr);
+  drawFreeCanvas();
+}
+
+function drawFreeCanvas() {
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  freeBgColor = isDarkMode ? '#0d0d18' : '#f8f8fc';
+  freeCtx.fillStyle = freeBgColor;
+  freeCtx.fillRect(0, 0, freeCanvas.width, freeCanvas.height);
+  // subtle dot grid
+  freeCtx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
+  const w = freeCanvas.offsetWidth, h = freeCanvas.offsetHeight;
+  for (let x = 20; x < w; x += 30) {
+    for (let y = 20; y < h; y += 30) {
+      freeCtx.beginPath(); freeCtx.arc(x, y, 1, 0, Math.PI*2); freeCtx.fill();
+    }
+  }
+  freeCtx.fillStyle = isDarkMode ? 'rgba(107,107,138,0.4)' : 'rgba(80,80,120,0.4)';
+  freeCtx.font = '13px Space Grotesk';
+  freeCtx.textAlign = 'center';
+  freeCtx.fillText('Your canvas. Draw anything.', w/2, h/2);
+}
+
+function setFreeTool(t) {
+  freeTool = t;
+  freeCanvas.style.cursor = t === 'fill' ? 'cell' : t === 'erase' ? 'crosshair' : 'crosshair';
+  // reset all buttons
+  ['freeBtnDraw','freeBtnFill','freeBtnErase'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.background = '';
+    el.style.color = '';
+    el.style.borderColor = '';
+    el.classList.remove('active');
+  });
+  const active = document.getElementById(
+    t === 'draw' ? 'freeBtnDraw' : t === 'fill' ? 'freeBtnFill' : 'freeBtnErase'
+  );
+  active.style.background = 'var(--cyan)';
+  active.style.color = 'var(--bg)';
+  active.style.borderColor = 'var(--cyan)';
+}
+
+function clearFreeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  freeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawFreeCanvas();
+}
+
+function getFreePos(e) {
+  const rect = freeCanvas.getBoundingClientRect();
+  const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+  const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function freeStroke(from, to) {
+  const size = parseInt(document.getElementById('brushSize').value);
+  freeCtx.beginPath();
+  freeCtx.moveTo(from.x, from.y);
+  freeCtx.lineTo(to.x, to.y);
+  if (freeTool === 'erase') {
+    // Paint bg color — clean, theme-correct erase
+    freeCtx.strokeStyle = freeBgColor;
+    freeCtx.lineWidth = size * 3;
+  } else {
+    freeCtx.strokeStyle = document.getElementById('freeColor').value;
+    freeCtx.lineWidth = size;
+  }
+  freeCtx.lineCap = 'round';
+  freeCtx.lineJoin = 'round';
+  freeCtx.stroke();
+}
+
+// Flood fill for free canvas (pixel-level)
+function freeFill(startX, startY) {
+  const fillHex = document.getElementById('freeColor').value;
+  const imageData = freeCtx.getImageData(0, 0, freeCanvas.width, freeCanvas.height);
+  const data = imageData.data;
+  const W = freeCanvas.width, H = freeCanvas.height;
+
+  // Scale click coords to canvas pixel coords
+  const dpr = window.devicePixelRatio || 1;
+  const px = Math.round(startX * dpr);
+  const py = Math.round(startY * dpr);
+  if (px < 0 || px >= W || py < 0 || py >= H) return;
+
+  const startIdx = (py * W + px) * 4;
+  const tr = data[startIdx], tg = data[startIdx+1], tb = data[startIdx+2], ta = data[startIdx+3];
+
+  const fr = parseInt(fillHex.slice(1,3),16);
+  const fg = parseInt(fillHex.slice(3,5),16);
+  const fb = parseInt(fillHex.slice(5,7),16);
+
+  // Don't fill if already same color
+  if (tr===fr && tg===fg && tb===fb && ta===255) return;
+
+  const visited = new Uint8Array(W * H);
+  const stack = [px + py * W];
+
+  while (stack.length) {
+    const pos = stack.pop();
+    const x = pos % W, y = Math.floor(pos / W);
+    if (x<0||x>=W||y<0||y>=H||visited[pos]) continue;
+    visited[pos] = 1;
+    const i = pos * 4;
+    // Tolerance 40 to handle anti-aliased edges
+    if (Math.abs(data[i]-tr)>40||Math.abs(data[i+1]-tg)>40||Math.abs(data[i+2]-tb)>40) continue;
+    data[i]=fr; data[i+1]=fg; data[i+2]=fb; data[i+3]=255;
+    stack.push(pos+1, pos-1, pos+W, pos-W);
+  }
+  freeCtx.putImageData(imageData, 0, 0);
+}
+
+freeCanvas.addEventListener('mousedown', e => {
+  const pos = getFreePos(e);
+  if (freeTool === 'fill') {
+    freeFill(pos.x, pos.y);
+    return;
+  }
+  freeDrawing = true;
+  freeLastPos = pos;
+  // dot on single click
+  const size = parseInt(document.getElementById('brushSize').value);
+  freeCtx.beginPath();
+  freeCtx.arc(pos.x, pos.y, (freeTool==='erase'?size*1.5:size)/2, 0, Math.PI*2);
+  freeCtx.fillStyle = freeTool === 'erase' ? freeBgColor : document.getElementById('freeColor').value;
+  freeCtx.fill();
+});
+
+freeCanvas.addEventListener('mousemove', e => {
+  if (!freeDrawing) return;
+  const pos = getFreePos(e);
+  freeStroke(freeLastPos, pos);
+  freeLastPos = pos;
+});
+
+freeCanvas.addEventListener('mouseup', () => { freeDrawing = false; freeLastPos = null; });
+freeCanvas.addEventListener('mouseleave', () => { freeDrawing = false; freeLastPos = null; });
+
+freeCanvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const pos = getFreePos(e);
+  if (freeTool === 'fill') { freeFill(pos.x, pos.y); return; }
+  freeDrawing = true; freeLastPos = pos;
+});
+freeCanvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!freeDrawing) return;
+  const p = getFreePos(e); freeStroke(freeLastPos, p); freeLastPos = p;
+});
+freeCanvas.addEventListener('touchend', e => { e.preventDefault(); freeDrawing = false; freeLastPos = null; });
+
+document.getElementById('brushSize').addEventListener('input', e => {
+  document.getElementById('brushSizeLabel').textContent = e.target.value + 'px';
+});
+
+// ════════════════════════════════════════════
+// FLOOD FILL — PIXEL GRID
+// ════════════════════════════════════════════
+
+const fc = document.getElementById('floodCanvas');
+const fctx = fc.getContext('2d');
+let floodMode = 'wall';
+let connectivity = 4;
+let isDrawing = false;
+
+const CELL = 18; // px per cell
+let COLS, ROWS;
+let grid; // 0=empty, 1=wall, 2+=fill color index
+const fillColors = {};
+let fillColorIndex = 2;
+
+function initGrid() {
+  const rect = fc.parentElement.getBoundingClientRect();
+  const w = Math.min(rect.width - 48, 800);
+  COLS = Math.floor(w / CELL);
+  ROWS = Math.floor(300 / CELL);
+  fc.width = COLS * CELL;
+  fc.height = ROWS * CELL;
+  fc.style.width = fc.width + 'px';
+  fc.style.height = fc.height + 'px';
+  grid = new Uint8Array(COLS * ROWS);
+  renderGrid();
+}
+
+function cellIdx(col, row) { return row * COLS + col; }
+
+function renderGrid() {
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  const bgColor = isDarkMode ? '#0d0d18' : '#f0f0f8';
+  const wallColor = isDarkMode ? '#e8e8f0' : '#1a1a2e';
+  const gridLineColor = isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
+
+  fctx.fillStyle = bgColor;
+  fctx.fillRect(0, 0, fc.width, fc.height);
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const val = grid[cellIdx(col, row)];
+      const x = col * CELL, y = row * CELL;
+
+      if (val === 1) {
+        fctx.fillStyle = wallColor;
+        fctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      } else if (val >= 2 && fillColors[val]) {
+        fctx.fillStyle = fillColors[val];
+        fctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      }
+    }
+  }
+
+  // Grid lines
+  fctx.strokeStyle = gridLineColor;
+  fctx.lineWidth = 1;
+  for (let col = 0; col <= COLS; col++) {
+    fctx.beginPath(); fctx.moveTo(col * CELL, 0); fctx.lineTo(col * CELL, fc.height); fctx.stroke();
+  }
+  for (let row = 0; row <= ROWS; row++) {
+    fctx.beginPath(); fctx.moveTo(0, row * CELL); fctx.lineTo(fc.width, row * CELL); fctx.stroke();
+  }
+
+  // Empty state hint
+  if (grid.every(v => v === 0)) {
+    fctx.fillStyle = isDarkMode ? 'rgba(107,107,138,0.5)' : 'rgba(80,80,120,0.5)';
+    fctx.font = '13px Space Grotesk';
+    fctx.textAlign = 'center';
+    fctx.fillText('Draw a diagonal wall, then fill on each side', fc.width/2, fc.height/2 - 8);
+    fctx.font = '11px JetBrains Mono';
+    fctx.fillStyle = isDarkMode ? 'rgba(107,107,138,0.35)' : 'rgba(80,80,120,0.35)';
+    fctx.fillText('Switch 4-conn ↔ 8-conn to see the difference', fc.width/2, fc.height/2 + 14);
+  }
+}
+
+function getCellFromEvent(e) {
+  const rect = fc.getBoundingClientRect();
+  const scaleX = fc.width / rect.width;
+  const scaleY = fc.height / rect.height;
+  const x = ((e.clientX || e.touches?.[0]?.clientX) - rect.left) * scaleX;
+  const y = ((e.clientY || e.touches?.[0]?.clientY) - rect.top) * scaleY;
+  const col = Math.floor(x / CELL);
+  const row = Math.floor(y / CELL);
+  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return null;
+  return { col, row };
+}
+
+function paintCell(col, row) {
+  const idx = cellIdx(col, row);
+  if (floodMode === 'wall') {
+    grid[idx] = 1;
+  } else if (floodMode === 'erase') {
+    grid[idx] = 0;
+  }
+  renderGrid();
+}
+
+fc.addEventListener('mousedown', e => {
+  const cell = getCellFromEvent(e);
+  if (!cell) return;
+  if (floodMode === 'fill') {
+    gridFloodFill(cell.col, cell.row);
+    return;
+  }
+  isDrawing = true;
+  paintCell(cell.col, cell.row);
+});
+
+fc.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const cell = getCellFromEvent(e);
+  if (!cell) return;
+  paintCell(cell.col, cell.row);
+});
+
+fc.addEventListener('mouseup', () => { isDrawing = false; });
+fc.addEventListener('mouseleave', () => { isDrawing = false; });
+
+fc.addEventListener('touchstart', e => { e.preventDefault(); fc.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); });
+fc.addEventListener('touchmove', e => { e.preventDefault(); fc.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); });
+fc.addEventListener('touchend', e => { e.preventDefault(); fc.dispatchEvent(new MouseEvent('mouseup')); });
+
+function gridFloodFill(startCol, startRow) {
+  const startVal = grid[cellIdx(startCol, startRow)];
+  if (startVal === 1) return; // don't fill walls
+
+  const hexColor = document.getElementById('fillColor').value;
+  const colorIdx = fillColorIndex++;
+  fillColors[colorIdx] = hexColor;
+
+  const neighbors4 = [[0,-1],[0,1],[-1,0],[1,0]];
+  const neighbors8 = [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]];
+  const nbrs = connectivity === 4 ? neighbors4 : neighbors8;
+
+  const visited = new Uint8Array(COLS * ROWS);
+  const stack = [[startCol, startRow]];
+
+  while (stack.length > 0) {
+    const [col, row] = stack.pop();
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) continue;
+    const idx = cellIdx(col, row);
+    if (visited[idx]) continue;
+    visited[idx] = 1;
+    if (grid[idx] === 1) continue; // wall
+    if (grid[idx] !== startVal) continue; // different region
+
+    grid[idx] = colorIdx;
+
+    for (const [dc, dr] of nbrs) {
+      const nc = col + dc, nr = row + dr;
+      if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS && !visited[cellIdx(nc, nr)]) {
+        stack.push([nc, nr]);
+      }
+    }
+  }
+  renderGrid();
+  highlightConnCard();
+}
+
+function highlightConnCard() {
+  document.getElementById('connCard4').classList.toggle('highlight', connectivity === 4);
+  document.getElementById('connCard8').classList.toggle('highlight', connectivity === 8);
+}
+
+function setFloodMode(m) {
+  floodMode = m;
+  fc.style.cursor = m === 'fill' ? 'cell' : m === 'erase' ? 'not-allowed' : 'crosshair';
+  document.getElementById('btnFloodDraw').classList.toggle('active', m === 'wall');
+  document.getElementById('btnFloodFill').classList.toggle('active', m === 'fill');
+  document.getElementById('btnFloodErase').classList.toggle('active', m === 'erase');
+}
+
+function setConnectivity(n) {
+  connectivity = n;
+  document.getElementById('conn4').classList.toggle('active', n === 4);
+  document.getElementById('conn8').classList.toggle('active', n === 8);
+  highlightConnCard();
+}
+
+function clearFlood() {
+  grid = new Uint8Array(COLS * ROWS);
+  fillColorIndex = 2;
+  Object.keys(fillColors).forEach(k => delete fillColors[k]);
+  renderGrid();
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+window.addEventListener('load', () => {
+  resizeCanvas();
+  initFreeCanvas();
+  initGrid();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initFreeCanvas();
+  initGrid();
+});
+</script>
+</body>
+</html>
