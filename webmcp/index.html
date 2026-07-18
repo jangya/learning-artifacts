@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Roamwise is a working travel demo that exposes flight-search and booking tools through WebMCP." />
+  <title>Roamwise — A WebMCP Travel Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --ink: #17201c;
+      --muted: #6f7873;
+      --line: #e4e8e5;
+      --paper: #f8faf8;
+      --white: #ffffff;
+      --green: #174f3f;
+      --green-2: #216c55;
+      --mint: #dff5e9;
+      --lime: #ccf36a;
+      --coral: #ff7755;
+      --blue: #5b79e6;
+      --panel-width: 404px;
+      --shadow: 0 24px 70px rgba(31, 55, 44, .14);
+      --sans: "DM Sans", system-ui, sans-serif;
+      --display: "Manrope", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+    html { scroll-behavior: smooth; background: var(--paper); }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); overflow-x: hidden; }
+    button, input, textarea, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid rgba(91,121,230,.45); outline-offset: 2px; }
+    a { color: inherit; }
+
+    .site { min-height: 100vh; transition: margin-right .28s ease; }
+    body.agent-open .site { margin-right: var(--panel-width); }
+    .shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar { background: #123e33; color: rgba(255,255,255,.78); font-size: 12px; }
+    .topbar-inner { height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .topbar strong { color: white; }
+    .topbar-links { display: flex; align-items: center; gap: 11px; }
+    .topbar-links span { color: rgba(255,255,255,.28); }
+    .topbar a { color: var(--lime); text-decoration: none; font-weight: 700; }
+    .nav { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 30px; background: var(--white); border-bottom: 1px solid var(--line); }
+    .nav > .shell { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font: 800 21px/1 var(--display); text-decoration: none; letter-spacing: -.04em; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: var(--green); color: var(--lime); font: 700 14px/1 var(--mono); transform: rotate(-5deg); }
+    .brand span:last-child em { color: var(--coral); font-style: normal; }
+    .nav-links { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+    .nav-link { border: 0; background: transparent; color: var(--muted); border-radius: 9px; padding: 10px 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .nav-link.active { background: var(--mint); color: var(--green); }
+    .nav-actions { display: flex; align-items: center; gap: 9px; }
+    .tool-status, .try-agent, .avatar { border: 1px solid var(--line); background: var(--white); min-height: 38px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; }
+    .tool-status { padding: 0 12px; color: var(--muted); font: 600 10px/1 var(--mono); }
+    .tool-dot { width: 7px; height: 7px; border-radius: 50%; background: #e6a43c; box-shadow: 0 0 0 4px rgba(230,164,60,.13); }
+    .tool-status.native .tool-dot { background: #3fb36b; box-shadow: 0 0 0 4px rgba(63,179,107,.13); }
+    .try-agent { padding: 0 14px; color: var(--green); cursor: pointer; font-weight: 700; font-size: 12px; }
+    .avatar { width: 38px; justify-content: center; background: #f0e9ff; color: #6546a5; border: 0; font-weight: 800; }
+
+    .hero { position: relative; overflow: hidden; background: linear-gradient(125deg, #e4f5ec 0%, #eef8f1 55%, #fff2e8 100%); border-bottom: 1px solid var(--line); }
+    .hero::before { content: ""; position: absolute; width: 380px; height: 380px; right: -100px; top: -160px; border: 50px solid rgba(255,119,85,.1); border-radius: 50%; }
+    .hero::after { content: "✦"; position: absolute; right: 8%; bottom: 6%; color: rgba(23,79,63,.1); font-size: 170px; line-height: 1; transform: rotate(16deg); }
+    .hero-inner { position: relative; z-index: 1; padding: 62px 0 54px; }
+    .hero-copy { max-width: 720px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px; color: var(--green-2); font: 700 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .12em; }
+    .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--coral); }
+    h1 { margin: 0; font: 800 clamp(2.65rem, 6vw, 5.2rem)/.98 var(--display); letter-spacing: -.065em; max-width: 760px; }
+    h1 em { color: var(--coral); font-style: normal; }
+    .hero-copy > p { margin: 18px 0 0; max-width: 580px; color: var(--muted); font-size: 1.05rem; line-height: 1.65; }
+
+    .search-card { position: relative; z-index: 2; margin-top: -2px; padding-bottom: 16px; }
+    .trip-tabs { display: inline-flex; gap: 4px; margin: 28px 0 12px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.76); border: 1px solid rgba(23,79,63,.1); }
+    .trip-tab { border: 0; background: transparent; color: var(--muted); border-radius: 8px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .trip-tab.active { background: var(--green); color: white; }
+    .search-form { display: grid; grid-template-columns: 1.05fr 36px 1.05fr 1fr .72fr auto; align-items: stretch; background: var(--white); padding: 9px; border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); }
+    .search-field { padding: 8px 13px; border-right: 1px solid var(--line); min-width: 0; }
+    .search-field label { display: block; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+    .search-field input, .search-field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-weight: 700; font-size: 14px; padding: 0; }
+    .swap { align-self: center; justify-self: center; width: 29px; height: 29px; border-radius: 50%; border: 1px solid var(--line); color: var(--green); background: var(--paper); cursor: pointer; z-index: 1; }
+    .search-btn { border: 0; border-radius: 11px; background: var(--green); color: white; font-weight: 700; padding: 0 21px; cursor: pointer; }
+    .search-btn:hover { background: var(--green-2); }
+    .search-hint { margin: 11px 3px 0; color: var(--muted); font-size: 12px; }
+    .search-hint button { border: 0; background: transparent; color: var(--green-2); font-weight: 700; cursor: pointer; padding: 0; }
+
+    .content { padding: 42px 0 80px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+    .section-heading h2 { margin: 0; font: 800 clamp(1.6rem, 3vw, 2.35rem)/1.1 var(--display); letter-spacing: -.045em; }
+    .section-heading p { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+    .section-heading a { color: var(--green-2); font-size: 13px; font-weight: 700; }
+    .destination-grid { display: grid; grid-template-columns: 1.25fr .75fr .75fr; gap: 14px; }
+    .destination { min-height: 210px; position: relative; overflow: hidden; border-radius: 18px; padding: 20px; color: white; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 -90px 90px rgba(0,0,0,.24); }
+    .destination:nth-child(1) { background: linear-gradient(145deg, #367a69, #75b7a1 58%, #f3c986); }
+    .destination:nth-child(2) { background: linear-gradient(145deg, #c55f42, #eaa879 60%, #f7d7b5); }
+    .destination:nth-child(3) { background: linear-gradient(145deg, #4f6594, #899ace 60%, #e8b8d4); }
+    .destination::before { content: ""; position: absolute; width: 170px; height: 170px; border-radius: 50%; background: rgba(255,255,255,.14); top: -70px; right: -40px; }
+    .destination::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 52%; background: linear-gradient(25deg, rgba(255,255,255,.08) 25%, transparent 26%); background-size: 28px 28px; opacity: .5; }
+    .destination > * { position: relative; z-index: 1; }
+    .destination small { font-weight: 600; opacity: .82; }
+    .destination h3 { margin: 3px 0 4px; font: 800 1.55rem/1 var(--display); letter-spacing: -.04em; }
+    .destination strong { font-size: 12px; color: var(--lime); }
+
+    .results { display: none; margin-top: 42px; scroll-margin-top: 25px; }
+    .results.visible { display: block; }
+    .result-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 15px; }
+    .result-title h2 { margin: 0; font: 800 1.75rem/1.1 var(--display); letter-spacing: -.04em; }
+    .result-title p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .filters { display: flex; gap: 7px; flex-wrap: wrap; }
+    .filter-btn { border: 1px solid var(--line); background: var(--white); color: var(--muted); border-radius: 999px; padding: 8px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .filter-btn.active { background: var(--mint); color: var(--green); border-color: #badfca; }
+    .result-layout { display: grid; grid-template-columns: 1fr 270px; gap: 16px; align-items: start; }
+    .flight-list { display: grid; gap: 10px; }
+    .flight-card { display: grid; grid-template-columns: 1.2fr 1fr .7fr auto; align-items: center; gap: 18px; padding: 17px; border-radius: 15px; border: 1px solid var(--line); background: var(--white); transition: .2s; }
+    .flight-card:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(31,55,44,.08); }
+    .flight-card.selected { border: 2px solid var(--green-2); background: #fafffc; }
+    .airline { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .airline-mark { width: 38px; height: 38px; border-radius: 11px; background: var(--green); color: var(--lime); display: grid; place-items: center; flex: 0 0 auto; font: 600 11px/1 var(--mono); }
+    .airline strong, .route strong { display: block; font-size: 13px; }
+    .airline span, .route span { display: block; color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .duration { text-align: center; color: var(--muted); font-size: 10px; }
+    .duration::before { content: ""; display: block; height: 1px; background: var(--line); margin-bottom: 5px; }
+    .price { text-align: right; }
+    .price strong { display: block; font: 800 16px/1 var(--display); }
+    .price span { color: var(--muted); font-size: 9px; }
+    .choose-btn { border: 0; background: var(--green); color: white; border-radius: 9px; padding: 10px 13px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .trip-summary { border: 1px solid var(--line); background: var(--white); border-radius: 16px; padding: 17px; position: sticky; top: 16px; }
+    .trip-summary h3 { margin: 0 0 14px; font: 800 15px/1.2 var(--display); }
+    .summary-route { padding: 12px; border-radius: 10px; background: var(--paper); font-size: 12px; }
+    .summary-route strong { display: block; margin-bottom: 4px; }
+    .summary-route span { color: var(--muted); }
+    .summary-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+    .summary-row span { color: var(--muted); }
+    .summary-total { display: flex; align-items: end; justify-content: space-between; padding-top: 14px; }
+    .summary-total span { font-size: 11px; color: var(--muted); }
+    .summary-total strong { font: 800 19px/1 var(--display); }
+
+    .booking { display: none; margin-top: 16px; padding: 20px; border-radius: 17px; background: #f1f7ff; border: 1px solid #cfdaef; }
+    .booking.visible { display: block; }
+    .booking-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
+    .booking-head h3 { margin: 0; font: 800 1.15rem/1.2 var(--display); }
+    .booking-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .agent-filled { display: none; color: var(--blue); font: 600 9px/1 var(--mono); background: white; border-radius: 999px; padding: 7px 9px; }
+    .booking.agent-active .agent-filled { display: inline-flex; }
+    .booking-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .booking-field label { display: block; color: var(--muted); font-size: 10px; font-weight: 700; margin-bottom: 5px; }
+    .booking-field input { width: 100%; height: 42px; border: 1px solid #ced8e9; border-radius: 9px; background: white; padding: 0 11px; color: var(--ink); }
+    .review-btn { height: 42px; border: 0; border-radius: 9px; background: var(--blue); color: white; padding: 0 15px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .agent-launcher { position: fixed; z-index: 20; right: 22px; bottom: 22px; width: 52px; height: 52px; border: 0; border-radius: 17px; background: linear-gradient(145deg, #6f8ff5, #805ec5); color: white; font-size: 22px; box-shadow: 0 14px 38px rgba(73,72,160,.32); cursor: pointer; transition: .2s; }
+    body.agent-open .agent-launcher { opacity: 0; transform: translateX(20px); pointer-events: none; }
+    .agent-panel { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; width: var(--panel-width); background: #fbfbfd; border-left: 1px solid #e2e4ea; box-shadow: -18px 0 55px rgba(32,38,55,.12); display: flex; flex-direction: column; transform: translateX(102%); transition: transform .28s ease; }
+    body.agent-open .agent-panel { transform: translateX(0); }
+    .agent-header { height: 66px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 18px; border-bottom: 1px solid #e8e9ee; }
+    .agent-title { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .gem-mark { width: 31px; height: 31px; border-radius: 10px; display: grid; place-items: center; color: white; background: linear-gradient(145deg, #6488ef, #9365c7 65%, #f08085); }
+    .agent-title small { display: block; color: #7b7f8b; font-weight: 500; font-size: 10px; margin-top: 2px; }
+    .panel-controls { display: flex; gap: 4px; }
+    .icon-btn { width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: #6f7480; cursor: pointer; font-size: 17px; }
+    .icon-btn:hover { background: #eef0f4; }
+    .agent-conversation { flex: 1; overflow-y: auto; padding: 22px 18px 16px; }
+    .agent-intro { padding: 9px 4px 18px; }
+    .agent-intro .spark { font-size: 25px; color: #6688ec; }
+    .agent-intro h2 { margin: 11px 0 7px; font: 700 1.5rem/1.2 var(--display); letter-spacing: -.035em; }
+    .agent-intro p { margin: 0; color: #737986; font-size: 13px; line-height: 1.55; }
+    .suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 7px 0 20px; }
+    .suggestion { min-height: 68px; text-align: left; border: 1px solid #dfe2e8; background: white; color: #494e59; border-radius: 13px; padding: 10px; font-size: 11px; line-height: 1.4; cursor: pointer; }
+    .suggestion:hover { border-color: #9caee7; background: #f8f9ff; }
+    .message { margin: 13px 0; font-size: 13px; line-height: 1.55; }
+    .message.user { margin-left: 44px; padding: 11px 13px; border-radius: 15px 15px 4px 15px; background: #ebedf2; }
+    .message.agent { padding-left: 40px; position: relative; color: #454a55; }
+    .message.agent::before { content: "✦"; position: absolute; left: 8px; top: 0; color: #6a87e8; font-size: 18px; }
+    .tool-call { margin: 9px 0 12px 40px; border: 1px solid #dfe2e9; background: white; border-radius: 11px; overflow: hidden; font: 500 9px/1.5 var(--mono); }
+    .tool-call-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; color: #5b6170; border-bottom: 1px solid #edf0f2; }
+    .tool-call-head strong { color: #5c71c8; font-weight: 600; }
+    .tool-call pre { margin: 0; padding: 9px 10px; color: #6e7480; white-space: pre-wrap; word-break: break-word; background: #fafbfc; }
+    .thinking { display: inline-flex; gap: 4px; padding-left: 41px; margin: 8px 0; }
+    .thinking i { width: 6px; height: 6px; border-radius: 50%; background: #889ce5; animation: pulse 1s infinite ease-in-out; }
+    .thinking i:nth-child(2) { animation-delay: .15s; } .thinking i:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%,100% { opacity:.25; transform:translateY(0); } 50% { opacity:1; transform:translateY(-3px); } }
+    .agent-composer-wrap { flex: 0 0 auto; padding: 10px 14px 15px; background: linear-gradient(to top, #fbfbfd 85%, transparent); }
+    .agent-composer { border: 1px solid #d5d8df; background: white; border-radius: 18px; padding: 11px 11px 8px; box-shadow: 0 6px 20px rgba(42,49,70,.07); }
+    .agent-composer textarea { width: 100%; min-height: 48px; max-height: 110px; resize: none; border: 0; outline: 0; color: #353a44; background: transparent; font-size: 13px; line-height: 1.45; }
+    .composer-actions { display: flex; align-items: center; justify-content: space-between; }
+    .demo-label { color: #969ba5; font: 600 8px/1 var(--mono); letter-spacing: .08em; }
+    .send-btn { width: 33px; height: 33px; border: 0; border-radius: 50%; background: #5c78df; color: white; cursor: pointer; font-weight: 700; }
+    .send-btn:disabled { opacity: .45; cursor: wait; }
+    .agent-disclaimer { text-align: center; color: #a0a4ad; font-size: 9px; margin-top: 7px; }
+
+    .modal-backdrop { position: fixed; z-index: 50; inset: 0; background: rgba(20,29,25,.42); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(590px, 100%); max-height: min(720px, calc(100vh - 40px)); overflow: auto; background: white; border-radius: 22px; box-shadow: 0 32px 100px rgba(15,30,22,.28); }
+    .modal-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding: 24px 24px 18px; border-bottom: 1px solid var(--line); }
+    .modal-head h2 { margin: 0; font: 800 1.45rem/1.2 var(--display); letter-spacing: -.04em; }
+    .modal-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .modal-close { border: 0; background: var(--paper); border-radius: 50%; width: 33px; height: 33px; cursor: pointer; }
+    .modal-body { padding: 22px 24px 25px; }
+    .instruction-status { display: flex; gap: 11px; align-items: center; padding: 12px; border-radius: 11px; background: #f4f6fa; margin-bottom: 18px; }
+    .instruction-status .tool-dot { flex: 0 0 auto; }
+    .instruction-status strong { display: block; font-size: 12px; }
+    .instruction-status span:last-child { color: var(--muted); font-size: 10px; }
+    .steps { display: grid; gap: 13px; }
+    .step { display: grid; grid-template-columns: 28px 1fr; gap: 11px; }
+    .step-num { width: 28px; height: 28px; border-radius: 9px; background: var(--mint); color: var(--green); display: grid; place-items: center; font: 700 10px/1 var(--mono); }
+    .step strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .step p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .step code { font: 500 9px/1.4 var(--mono); background: var(--paper); padding: 3px 5px; border-radius: 5px; color: var(--green); }
+    .prompt-copy { margin-top: 18px; padding: 13px; background: #f6f7ff; border: 1px solid #dfe4f5; border-radius: 11px; color: #4f5562; font-size: 11px; line-height: 1.5; }
+    .webmcp-summary { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0 0 18px; }
+    .stack { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: center; gap: 7px; padding: 14px; border: 1px solid #dfe5e1; border-radius: 14px; background: #f8faf9; }
+    .stack-node { min-height: 74px; border: 1px solid var(--line); border-radius: 10px; background: white; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+    .stack-node.highlight { border-color: #a9d7bc; background: var(--mint); }
+    .stack-node small { color: var(--muted); font: 600 8px/1 var(--mono); text-transform: uppercase; letter-spacing: .07em; }
+    .stack-node strong { font-size: 11px; line-height: 1.25; margin-top: 5px; }
+    .stack-arrow { color: var(--green-2); font-weight: 800; }
+    .stack-caption { margin: 7px 2px 0; color: var(--muted); font-size: 9px; }
+    .context-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .context-card { padding: 13px; border-radius: 12px; border: 1px solid var(--line); }
+    .context-card.before { background: #fff8f5; border-color: #f0d9d1; }
+    .context-card.after { background: #f4fbf6; border-color: #cfe6d7; }
+    .context-card small { color: var(--muted); font: 600 8px/1 var(--mono); text-transform: uppercase; letter-spacing: .07em; }
+    .context-card strong { display: block; margin: 6px 0 4px; font-size: 12px; }
+    .context-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .benefit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 10px; }
+    .benefit { padding: 12px; border-radius: 11px; background: var(--paper); }
+    .benefit span { display: block; color: var(--green-2); font-size: 16px; margin-bottom: 7px; }
+    .benefit strong { display: block; font-size: 11px; margin-bottom: 4px; }
+    .benefit p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .proposal-note { margin: 14px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+    .docs-link { color: var(--green-2); font-size: 11px; font-weight: 700; }
+    .got-it { border: 0; border-radius: 9px; background: var(--green); color: white; padding: 10px 15px; font-weight: 700; font-size: 11px; cursor: pointer; }
+
+    .toast { position: fixed; z-index: 80; left: 50%; bottom: 22px; transform: translate(-50%, 25px); opacity: 0; pointer-events: none; background: var(--ink); color: white; padding: 11px 15px; border-radius: 10px; font-size: 11px; transition: .25s; box-shadow: var(--shadow); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    footer { padding: 24px 0 38px; color: var(--muted); font-size: 11px; border-top: 1px solid var(--line); background: white; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+    .footer-inner a { color: var(--green-2); }
+
+    @media (max-width: 1080px) {
+      :root { --panel-width: 375px; }
+      .tool-status { display: none; }
+      .search-form { grid-template-columns: 1fr 32px 1fr 1fr; }
+      .search-field:nth-of-type(4) { border-right: 0; }
+      .search-btn { height: 46px; margin-top: 9px; grid-column: 1 / -1; }
+      .search-field.passengers { display: none; }
+      .result-layout { grid-template-columns: 1fr; }
+      .trip-summary { position: static; }
+    }
+    @media (max-width: 820px) {
+      body.agent-open .site { margin-right: 0; }
+      .agent-panel { width: min(100%, 420px); }
+      .nav-links { display: none; }
+      .destination-grid { grid-template-columns: 1fr 1fr; }
+      .destination:first-child { grid-column: 1 / -1; }
+      .flight-card { grid-template-columns: 1fr 1fr auto; }
+      .duration { display: none; }
+      .booking-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 580px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      .topbar { display: none; }
+      .nav { height: 64px; }
+      .try-agent { font-size: 0; width: 38px; padding: 0; justify-content: center; }
+      .try-agent::before { content: "?"; font-size: 14px; }
+      .avatar { display: none; }
+      .hero-inner { padding: 48px 0 34px; }
+      h1 { font-size: clamp(2.65rem, 14vw, 4rem); }
+      .hero-copy > p { font-size: .94rem; }
+      .search-form { grid-template-columns: 1fr 34px 1fr; }
+      .search-field.dates { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line); margin-top: 7px; padding-top: 12px; }
+      .destination-grid { grid-template-columns: 1fr; }
+      .destination:first-child { grid-column: auto; }
+      .result-top { align-items: flex-start; flex-direction: column; }
+      .flight-card { grid-template-columns: 1fr auto; }
+      .route { display: none; }
+      .booking-grid { grid-template-columns: 1fr; }
+      .review-btn { width: 100%; }
+      .suggestions { grid-template-columns: 1fr; }
+      .stack { grid-template-columns: 1fr; }
+      .stack-arrow { text-align: center; transform: rotate(90deg); }
+      .context-compare, .benefit-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+<body class="agent-open">
+  <div class="site">
+    <div class="topbar"><div class="shell topbar-inner"><span><strong>WebMCP travel demo</strong> · this page exposes real browser-agent tools</span><div class="topbar-links"><a href="#" id="whatIsLink">What is WebMCP?</a><span>·</span><a href="#" id="topTry">How to try it →</a></div></div></div>
+    <header class="nav">
+      <div class="shell">
+        <a class="brand" href="../index.html" aria-label="Roamwise home"><span class="brand-mark">R·</span><span>roam<em>wise</em></span></a>
+        <nav class="nav-links" aria-label="Travel services"><button class="nav-link active">Flights</button><button class="nav-link">Stays</button><button class="nav-link">Trips</button></nav>
+        <div class="nav-actions">
+          <div class="tool-status" id="toolStatus" title="WebMCP availability"><span class="tool-dot"></span><span id="toolStatusText">Demo tools ready</span></div>
+          <button class="try-agent" id="tryAgentBtn">Try with a real agent</button>
+          <span class="avatar" aria-label="Profile">AR</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="shell hero-inner">
+          <div class="hero-copy">
+            <span class="eyebrow">Thoughtful journeys, fewer clicks</span>
+            <h1>Where will curiosity take <em>you?</em></h1>
+            <p>Search hand-picked routes, compare transparent fares, and let your browser assistant handle the repetitive parts.</p>
+          </div>
+          <div class="search-card">
+            <div class="trip-tabs"><button class="trip-tab active">Round trip</button><button class="trip-tab">One way</button><button class="trip-tab">Multi-city</button></div>
+            <form class="search-form" id="searchForm">
+              <div class="search-field"><label for="fromInput">From</label><input id="fromInput" value="Bengaluru (BLR)" autocomplete="off" /></div>
+              <button class="swap" id="swapBtn" type="button" aria-label="Swap origin and destination">⇄</button>
+              <div class="search-field"><label for="toInput">To</label><input id="toInput" value="Singapore (SIN)" autocomplete="off" /></div>
+              <div class="search-field dates"><label for="dateInput">Dates</label><input id="dateInput" value="14 Aug — 20 Aug" autocomplete="off" /></div>
+              <div class="search-field passengers"><label for="passengerSelect">Travelers</label><select id="passengerSelect"><option>1 adult</option><option>2 adults</option><option>Family · 4</option></select></div>
+              <button class="search-btn" type="submit">Search flights</button>
+            </form>
+            <p class="search-hint">Prefer to ask? <button id="askAssistant" type="button">Tell the travel assistant what you need.</button></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="shell content">
+        <div id="discoverSection">
+          <div class="section-heading"><div><h2>Ideas for your next escape</h2><p>Popular routes from Bengaluru, based on this season.</p></div><a href="#">Explore all destinations →</a></div>
+          <div class="destination-grid">
+            <article class="destination"><small>Island city · 4h 45m</small><h3>Singapore</h3><strong>Flights from ₹24,900</strong></article>
+            <article class="destination"><small>Desert skyline · 3h 35m</small><h3>Dubai</h3><strong>Flights from ₹22,400</strong></article>
+            <article class="destination"><small>Neon & tradition · 12h 10m</small><h3>Tokyo</h3><strong>Flights from ₹41,800</strong></article>
+          </div>
+        </div>
+
+        <section class="results" id="results" aria-live="polite">
+          <div class="result-top">
+            <div class="result-title"><h2 id="resultHeading">Bengaluru to Singapore</h2><p id="resultMeta">2 flights · prices include taxes</p></div>
+            <div class="filters"><button class="filter-btn active" data-filter="all">Recommended</button><button class="filter-btn" data-filter="direct">Nonstop</button><button class="filter-btn" data-filter="value">Best value</button></div>
+          </div>
+          <div class="result-layout">
+            <div>
+              <div class="flight-list" id="flightList"></div>
+              <section class="booking" id="bookingSection">
+                <div class="booking-head"><div><h3>Traveler details</h3><p>The assistant can prepare this form; you keep control of confirmation.</p></div><span class="agent-filled">✦ AGENT PREPARED</span></div>
+                <form id="bookingForm">
+                  <div class="booking-grid">
+                    <div class="booking-field"><label for="travelerName">Full legal name</label><input id="travelerName" name="travelerName" toolparamdescription="Traveler's full legal name as printed on their passport." autocomplete="name" required /></div>
+                    <div class="booking-field"><label for="travelerEmail">Email</label><input id="travelerEmail" name="travelerEmail" type="email" toolparamdescription="Email address for itinerary and booking updates." autocomplete="email" required /></div>
+                    <div class="booking-field"><label for="seatPreference">Seat preference</label><input id="seatPreference" name="seatPreference" toolparamdescription="Preferred seat position: aisle, middle, or window." placeholder="Window" /></div>
+                    <button class="review-btn" type="submit">Review booking</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+            <aside class="trip-summary" id="tripSummary"><h3>Your trip</h3><div class="summary-route"><strong>No flight selected</strong><span>Choose a result to continue</span></div><div class="summary-row"><span>Traveler</span><strong>1 adult</strong></div><div class="summary-row"><span>Taxes & fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>₹—</strong></div></aside>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer><div class="shell footer-inner"><span>Roamwise is a fictional travel agency. No network request or purchase is made.</span><span><a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noreferrer">About WebMCP ↗</a></span></div></footer>
+  </div>
+
+  <button class="agent-launcher" id="agentLauncher" aria-label="Open travel assistant">✦</button>
+  <aside class="agent-panel" id="agentPanel" aria-label="Travel assistant">
+    <header class="agent-header">
+      <div class="agent-title"><span class="gem-mark">✦</span><span>Travel assistant<small>Works with the page in this tab</small></span></div>
+      <div class="panel-controls"><button class="icon-btn" id="newChatBtn" aria-label="Start a new chat">↻</button><button class="icon-btn" id="closeAgentBtn" aria-label="Close travel assistant">×</button></div>
+    </header>
+    <div class="agent-conversation" id="conversation">
+      <div class="agent-intro"><span class="spark">✦</span><h2>Where should we go?</h2><p>I can search Roamwise, compare the current results, select a flight, and prepare traveler details for your review.</p></div>
+      <div class="suggestions">
+        <button class="suggestion" data-prompt="Find a direct flight from Bengaluru to Singapore under ₹30,000 and select the cheapest.">Singapore under ₹30,000</button>
+        <button class="suggestion" data-prompt="Find a morning flight from Delhi to Dubai under ₹25,000 and select the best value.">Dubai in the morning</button>
+        <button class="suggestion" data-prompt="Show the best-value flight from Mumbai to Tokyo below ₹45,000.">Best value to Tokyo</button>
+        <button class="suggestion" data-prompt="Search Bengaluru to Singapore, select the cheapest, and prepare the booking for Asha Rao with a window seat.">Prepare a booking</button>
+      </div>
+    </div>
+    <div class="agent-composer-wrap">
+      <div class="agent-composer"><textarea id="agentInput" aria-label="Ask the travel assistant" placeholder="Ask about flights on this page…"></textarea><div class="composer-actions"><span class="demo-label">ON-PAGE DEMO ASSISTANT</span><button class="send-btn" id="sendBtn" aria-label="Send request">↑</button></div></div>
+      <div class="agent-disclaimer">This demo assistant uses deterministic sample data.</div>
+    </div>
+  </aside>
+
+  <div class="modal-backdrop" id="instructionModal" role="dialog" aria-modal="true" aria-labelledby="instructionTitle">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="instructionTitle">Try Roamwise with a real agent</h2><p>The page already exposes browser-native WebMCP tools.</p></div><button class="modal-close" id="modalClose" aria-label="Close instructions">×</button></div>
+      <div class="modal-body">
+        <div class="instruction-status"><span class="tool-dot"></span><div><strong id="instructionStatusTitle">Simulation is active in this browser</strong><span id="instructionStatusCopy">Enable experimental WebMCP support, then reload this page.</span></div></div>
+        <div class="steps">
+          <div class="step"><span class="step-num">1</span><div><strong>Enable WebMCP in Chrome 149+</strong><p>Open <code>chrome://flags/#enable-webmcp-testing</code>, choose Enabled, and relaunch Chrome. For a public rollout, this site can instead join the WebMCP origin trial.</p></div></div>
+          <div class="step"><span class="step-num">2</span><div><strong>Open this page in a visible tab</strong><p>WebMCP tools belong to the live page and cannot be called headlessly from only a URL.</p></div></div>
+          <div class="step"><span class="step-num">3</span><div><strong>Connect a compatible browser agent</strong><p>Use Chrome's Model Context Tool Inspector today, or another extension agent with WebMCP support and permission for this page.</p></div></div>
+          <div class="step"><span class="step-num">4</span><div><strong>Ask it to use the page tools</strong><p>The agent should discover <code>search_flights</code>, <code>filter_flights</code>, and <code>select_flight</code>. Selecting a flight reveals <code>prepare_booking</code>.</p></div></div>
+        </div>
+        <div class="prompt-copy">“Find a direct flight from Bengaluru to Singapore under ₹30,000, select the cheapest, and prepare the booking for Asha Rao with a window seat. Do not purchase it.”</div>
+        <div class="modal-actions"><a class="docs-link" href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noreferrer">Official setup guide ↗</a><button class="got-it" id="gotItBtn">Got it</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="aboutTitle">What is WebMCP?</h2><p>A browser-native bridge between an AI agent and your existing web app.</p></div><button class="modal-close" id="aboutClose" aria-label="Close WebMCP overview">×</button></div>
+      <div class="modal-body">
+        <p class="webmcp-summary">A page exposes named JavaScript functions or annotated forms as structured <strong>tools</strong>. The browser lets an agent discover and call those tools while the user stays in the same visible, authenticated page.</p>
+        <div class="stack" aria-label="WebMCP technology stack">
+          <div class="stack-node"><small>Intent</small><strong>User request</strong></div><span class="stack-arrow">→</span>
+          <div class="stack-node"><small>Reasoning</small><strong>Browser AI agent</strong></div><span class="stack-arrow">→</span>
+          <div class="stack-node highlight"><small>Web layer</small><strong>WebMCP tools</strong></div><span class="stack-arrow">→</span>
+          <div class="stack-node"><small>Your stack</small><strong>UI · JavaScript · APIs</strong></div>
+        </div>
+        <p class="stack-caption">The browser mediates the call; WebMCP reuses the page’s current state and application logic.</p>
+        <div class="context-compare">
+          <div class="context-card before"><small>Without WebMCP</small><strong>Observe → guess → click → observe again</strong><p>The agent may repeatedly consume screenshots, page text, or DOM context to understand each step.</p></div>
+          <div class="context-card after"><small>With WebMCP</small><strong>Discover schema → call tool → receive result</strong><p>Compact schemas and structured results can reduce unnecessary context—and therefore token use—without hiding the UI.</p></div>
+        </div>
+        <div class="benefit-grid">
+          <div class="benefit"><span>◫</span><strong>Less context</strong><p>Send purposeful tool arguments instead of repeatedly interpreting the entire interface.</p></div>
+          <div class="benefit"><span>✓</span><strong>More reliable</strong><p>Tools connect to application logic, so visual redesigns are less likely to break agents.</p></div>
+          <div class="benefit"><span>◎</span><strong>Shared control</strong><p>Actions update the same visible page, preserving session state and human review.</p></div>
+        </div>
+        <p class="proposal-note">WebMCP is an emerging proposal inspired by MCP. It complements backend MCP integrations rather than replacing them.</p>
+        <div class="modal-actions"><a class="docs-link" href="https://webmachinelearning.github.io/webmcp/" target="_blank" rel="noreferrer">Read the draft ↗</a><button class="got-it" id="aboutGotIt">Got it</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => [...document.querySelectorAll(selector)];
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const airports = { BLR: 'Bengaluru', SIN: 'Singapore', DEL: 'Delhi', DXB: 'Dubai', BOM: 'Mumbai', NRT: 'Tokyo' };
+    const routes = {
+      'BLR-SIN': [
+        { id: 'RW201', airline: 'Roam Air', mark: 'RA', depart: '08:20', arrive: '15:35', duration: '4h 45m', direct: true, price: 28400, value: 94 },
+        { id: 'SQ503', airline: 'Skyline', mark: 'SK', depart: '11:10', arrive: '18:40', duration: '5h 00m', direct: true, price: 29650, value: 88 },
+        { id: 'EA118', airline: 'Eastward', mark: 'EA', depart: '06:45', arrive: '16:10', duration: '6h 55m', direct: false, price: 24900, value: 82 }
+      ],
+      'DEL-DXB': [
+        { id: 'DX112', airline: 'Dune Air', mark: 'DA', depart: '07:15', arrive: '09:20', duration: '3h 35m', direct: true, price: 23900, value: 95 },
+        { id: 'RW418', airline: 'Roam Air', mark: 'RA', depart: '09:40', arrive: '11:55', duration: '3h 45m', direct: true, price: 24750, value: 89 }
+      ],
+      'BOM-NRT': [
+        { id: 'PA771', airline: 'Pacific Arc', mark: 'PA', depart: '06:30', arrive: '22:10', duration: '12h 10m', direct: false, price: 42600, value: 96 },
+        { id: 'EA305', airline: 'Eastward', mark: 'EA', depart: '22:05', arrive: '17:30', duration: '15h 55m', direct: false, price: 44100, value: 84 }
+      ]
+    };
+    const state = { origin: 'BLR', destination: 'SIN', flights: [], shown: [], selected: null, assistantBusy: false };
+
+    function extractCode(value, fallback) { const match = value.toUpperCase().match(/\(([A-Z]{3})\)|\b([A-Z]{3})\b/); return match ? (match[1] || match[2]) : fallback; }
+    function routeKey(origin, destination) { return `${origin}-${destination}`; }
+    function money(value) { return `₹${Number(value).toLocaleString('en-IN')}`; }
+    function normalizedArgs(args = {}) {
+      return { origin: (args.origin || state.origin).toUpperCase(), destination: (args.destination || state.destination).toUpperCase(), directOnly: Boolean(args.directOnly), maxPrice: Number(args.maxPrice) || null, sortBy: args.sortBy || 'recommended' };
+    }
+    function showResults() { $('#results').classList.add('visible'); $('#discoverSection').style.display = 'none'; }
+    function renderFlights(flights = state.shown) {
+      state.shown = flights;
+      $('#flightList').innerHTML = flights.length ? flights.map(flight => `
+        <article class="flight-card ${state.selected?.id === flight.id ? 'selected' : ''}" data-flight-id="${flight.id}">
+          <div class="airline"><span class="airline-mark">${flight.mark}</span><div><strong>${flight.airline}</strong><span>${flight.id} · ${flight.direct ? 'Nonstop' : '1 stop'}</span></div></div>
+          <div class="route"><strong>${flight.depart} → ${flight.arrive}</strong><span>${airports[state.origin]} to ${airports[state.destination]}</span></div>
+          <div class="duration">${flight.duration}</div>
+          <div class="price"><strong>${money(flight.price)}</strong><span>per traveler</span></div>
+          <button class="choose-btn" data-select="${flight.id}">${state.selected?.id === flight.id ? 'Selected' : 'Choose'}</button>
+        </article>`).join('') : '<article class="flight-card"><div class="airline"><div><strong>No matching flights</strong><span>Try removing a filter.</span></div></div></article>';
+      $$('[data-select]').forEach(button => button.addEventListener('click', () => selectFlight({ flightId: button.dataset.select })));
+    }
+    function updateHeading() { $('#resultHeading').textContent = `${airports[state.origin] || state.origin} to ${airports[state.destination] || state.destination}`; $('#resultMeta').textContent = `${state.shown.length} flights · prices include taxes`; }
+
+    function searchFlights(args = {}) {
+      const values = normalizedArgs(args); state.origin = values.origin; state.destination = values.destination;
+      let flights = [...(routes[routeKey(values.origin, values.destination)] || routes['BLR-SIN'])];
+      if (values.directOnly) flights = flights.filter(f => f.direct);
+      if (values.maxPrice) flights = flights.filter(f => f.price <= values.maxPrice);
+      if (values.sortBy === 'value') flights.sort((a, b) => b.value - a.value); else flights.sort((a, b) => a.price - b.price);
+      state.flights = [...(routes[routeKey(values.origin, values.destination)] || routes['BLR-SIN'])]; state.shown = flights; state.selected = null;
+      $('#fromInput').value = `${airports[state.origin] || state.origin} (${state.origin})`; $('#toInput').value = `${airports[state.destination] || state.destination} (${state.destination})`;
+      $('#bookingSection').classList.remove('visible', 'agent-active'); removeBookingTool(); showResults(); renderFlights(); updateHeading(); updateSummary();
+      return { route: routeKey(state.origin, state.destination), count: flights.length, flights };
+    }
+    function filterFlights(args = {}) {
+      let flights = [...state.flights];
+      if (args.directOnly) flights = flights.filter(f => f.direct);
+      if (Number(args.maxPrice)) flights = flights.filter(f => f.price <= Number(args.maxPrice));
+      if (args.sortBy === 'value') flights.sort((a, b) => b.value - a.value); else if (args.sortBy === 'price') flights.sort((a, b) => a.price - b.price);
+      renderFlights(flights); updateHeading();
+      return { count: flights.length, flights };
+    }
+    function selectFlight({ flightId } = {}) {
+      const flight = state.flights.find(item => item.id === flightId) || state.shown[0]; if (!flight) return { error: 'No matching flight is currently visible.' };
+      state.selected = flight; renderFlights(); updateSummary(); $('#bookingSection').classList.add('visible'); exposeBookingTool();
+      return { selectedFlight: flight, nextTool: 'prepare_booking' };
+    }
+    function prepareBooking({ travelerName = '', travelerEmail = '', seatPreference = '' } = {}) {
+      if (!state.selected) selectFlight({ flightId: state.shown[0]?.id });
+      $('#travelerName').value = travelerName; $('#travelerEmail').value = travelerEmail || (travelerName ? `${travelerName.toLowerCase().replace(/\s+/g,'.')}@example.com` : ''); $('#seatPreference').value = seatPreference;
+      $('#bookingSection').classList.add('visible', 'agent-active'); $('#bookingSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return { prepared: true, selectedFlight: state.selected?.id, requiresUserConfirmation: true };
+    }
+    function exposeBookingTool() { const form = $('#bookingForm'); form.setAttribute('toolname', 'prepare_booking'); form.setAttribute('tooldescription', 'Prepare traveler details for the selected flight. This only fills the visible form; the user must review and confirm the booking.'); }
+    function removeBookingTool() { const form = $('#bookingForm'); form.removeAttribute('toolname'); form.removeAttribute('tooldescription'); }
+    function updateSummary() {
+      const flight = state.selected;
+      $('#tripSummary').innerHTML = flight ? `<h3>Your trip</h3><div class="summary-route"><strong>${airports[state.origin]} → ${airports[state.destination]}</strong><span>${flight.airline} · ${flight.id} · ${flight.depart}</span></div><div class="summary-row"><span>Traveler</span><strong>1 adult</strong></div><div class="summary-row"><span>Taxes & fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>${money(flight.price)}</strong></div>` : '<h3>Your trip</h3><div class="summary-route"><strong>No flight selected</strong><span>Choose a result to continue</span></div><div class="summary-row"><span>Traveler</span><strong>1 adult</strong></div><div class="summary-row"><span>Taxes & fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>₹—</strong></div>';
+    }
+
+    $('#searchForm').addEventListener('submit', event => { event.preventDefault(); searchFlights({ origin: extractCode($('#fromInput').value, 'BLR'), destination: extractCode($('#toInput').value, 'SIN') }); $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    $('#swapBtn').addEventListener('click', () => { const from = $('#fromInput').value; $('#fromInput').value = $('#toInput').value; $('#toInput').value = from; });
+    $$('.trip-tab').forEach(tab => tab.addEventListener('click', () => { $$('.trip-tab').forEach(item => item.classList.remove('active')); tab.classList.add('active'); }));
+    $$('.filter-btn').forEach(button => button.addEventListener('click', () => { $$('.filter-btn').forEach(item => item.classList.remove('active')); button.classList.add('active'); if (button.dataset.filter === 'direct') filterFlights({ directOnly: true }); else if (button.dataset.filter === 'value') filterFlights({ sortBy: 'value' }); else renderFlights(state.flights); updateHeading(); }));
+    $('#bookingForm').addEventListener('submit', event => { event.preventDefault(); showToast('Demo complete — nothing was purchased.'); });
+
+    function openAgent() { document.body.classList.add('agent-open'); }
+    function closeAgent() { document.body.classList.remove('agent-open'); }
+    $('#agentLauncher').addEventListener('click', openAgent); $('#closeAgentBtn').addEventListener('click', closeAgent); $('#askAssistant').addEventListener('click', openAgent);
+    function resetChat() { $('#conversation').innerHTML = '<div class="agent-intro"><span class="spark">✦</span><h2>Where should we go?</h2><p>I can search Roamwise, compare the current results, select a flight, and prepare traveler details for your review.</p></div><div class="suggestions"><button class="suggestion" data-prompt="Find a direct flight from Bengaluru to Singapore under ₹30,000 and select the cheapest.">Singapore under ₹30,000</button><button class="suggestion" data-prompt="Find a morning flight from Delhi to Dubai under ₹25,000 and select the best value.">Dubai in the morning</button><button class="suggestion" data-prompt="Show the best-value flight from Mumbai to Tokyo below ₹45,000.">Best value to Tokyo</button><button class="suggestion" data-prompt="Search Bengaluru to Singapore, select the cheapest, and prepare the booking for Asha Rao with a window seat.">Prepare a booking</button></div>'; bindSuggestions(); }
+    $('#newChatBtn').addEventListener('click', resetChat);
+    function bindSuggestions() { $$('.suggestion').forEach(button => button.addEventListener('click', () => runAssistant(button.dataset.prompt))); }
+    bindSuggestions();
+    function appendMessage(kind, html) { $('#conversation').insertAdjacentHTML('beforeend', `<div class="message ${kind}">${html}</div>`); $('#conversation').scrollTop = $('#conversation').scrollHeight; }
+    function appendTool(name, args) { $('#conversation').insertAdjacentHTML('beforeend', `<div class="tool-call"><div class="tool-call-head"><strong>✓ ${name}</strong><span>page tool</span></div><pre>${JSON.stringify(args, null, 2)}</pre></div>`); $('#conversation').scrollTop = $('#conversation').scrollHeight; }
+    function parsePrompt(prompt) {
+      const value = prompt.toLowerCase();
+      const scenario = value.includes('dubai') || value.includes('delhi') ? { origin:'DEL', destination:'DXB' } : value.includes('tokyo') || value.includes('mumbai') ? { origin:'BOM', destination:'NRT' } : { origin:'BLR', destination:'SIN' };
+      const amount = value.match(/(?:₹|rs\.?\s*)([\d,]+)/i); const nameMatch = prompt.match(/(?:for|traveler(?: is)?)[\s:]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/); const directOnly = value.includes('direct') || value.includes('nonstop');
+      return { ...scenario, directOnly, maxPrice: amount ? Number(amount[1].replace(/,/g,'')) : null, sortBy: value.includes('value') ? 'value' : 'price', prepare: value.includes('prepare') || value.includes('fill'), travelerName: nameMatch ? nameMatch[1].replace(/\s+(with|and).*$/i,'') : 'Asha Rao', seatPreference: value.includes('aisle') ? 'Aisle' : value.includes('window') ? 'Window' : '' };
+    }
+    async function runAssistant(prompt) {
+      if (state.assistantBusy || !prompt.trim()) return; state.assistantBusy = true; $('#sendBtn').disabled = true; openAgent();
+      appendMessage('user', prompt); $('#agentInput').value = ''; $('.suggestions')?.remove(); $('#conversation').insertAdjacentHTML('beforeend', '<div class="thinking" id="thinking"><i></i><i></i><i></i></div>'); $('#conversation').scrollTop = $('#conversation').scrollHeight;
+      const parsed = parsePrompt(prompt); await wait(650); $('#thinking')?.remove();
+      const searchArgs = { origin: parsed.origin, destination: parsed.destination, directOnly: parsed.directOnly, maxPrice: parsed.maxPrice, sortBy: parsed.sortBy };
+      const results = searchFlights(searchArgs); appendTool('search_flights', searchArgs); await wait(450);
+      if (!results.flights.length) { appendMessage('agent', 'I couldn’t find a flight matching every constraint. Try a higher budget or remove the nonstop requirement.'); state.assistantBusy = false; $('#sendBtn').disabled = false; return; }
+      const selected = results.flights[0]; selectFlight({ flightId: selected.id }); appendTool('select_flight', { flightId: selected.id }); await wait(420);
+      if (parsed.prepare) { const bookingArgs = { travelerName: parsed.travelerName, seatPreference: parsed.seatPreference }; prepareBooking(bookingArgs); appendTool('prepare_booking', bookingArgs); appendMessage('agent', `I selected <strong>${selected.airline} ${selected.id}</strong> for <strong>${money(selected.price)}</strong> and prepared the traveler form. Please review it on the page—nothing has been purchased.`); }
+      else appendMessage('agent', `I found ${results.flights.length} matching ${results.flights.length === 1 ? 'flight' : 'flights'} and selected <strong>${selected.airline} ${selected.id}</strong> at <strong>${money(selected.price)}</strong>. The traveler form is now available if you want me to prepare it.`);
+      state.assistantBusy = false; $('#sendBtn').disabled = false;
+    }
+    $('#sendBtn').addEventListener('click', () => runAssistant($('#agentInput').value));
+    $('#agentInput').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); runAssistant($('#agentInput').value); } });
+
+    function openInstructions(event) { event?.preventDefault(); $('#instructionModal').classList.add('open'); }
+    function closeInstructions() { $('#instructionModal').classList.remove('open'); }
+    $('#tryAgentBtn').addEventListener('click', openInstructions); $('#topTry').addEventListener('click', openInstructions); $('#modalClose').addEventListener('click', closeInstructions); $('#gotItBtn').addEventListener('click', closeInstructions); $('#instructionModal').addEventListener('click', event => { if (event.target === $('#instructionModal')) closeInstructions(); });
+    function openAbout(event) { event?.preventDefault(); $('#aboutModal').classList.add('open'); }
+    function closeAbout() { $('#aboutModal').classList.remove('open'); }
+    $('#whatIsLink').addEventListener('click', openAbout); $('#aboutClose').addEventListener('click', closeAbout); $('#aboutGotIt').addEventListener('click', closeAbout); $('#aboutModal').addEventListener('click', event => { if (event.target === $('#aboutModal')) closeAbout(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeInstructions(); closeAbout(); } });
+    let toastTimer; function showToast(message) { clearTimeout(toastTimer); $('#toast').textContent = message; $('#toast').classList.add('show'); toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 2600); }
+
+    async function registerNativeTools() {
+      if (!document.modelContext || typeof document.modelContext.registerTool !== 'function') return;
+      try {
+        await document.modelContext.registerTool({
+          name: 'search_flights', description: 'Search flights on Roamwise and display matching results in the current page.',
+          inputSchema: { type:'object', properties: { origin:{type:'string',description:'Three-letter IATA departure airport code.'}, destination:{type:'string',description:'Three-letter IATA arrival airport code.'}, directOnly:{type:'boolean',description:'Only return nonstop flights.'}, maxPrice:{type:'number',description:'Maximum fare in Indian rupees.'}, sortBy:{type:'string',enum:['recommended','price','value']} }, required:['origin','destination'] },
+          annotations: { readOnlyHint: true }, execute(args) { const result = searchFlights(args); return { content:[{type:'text',text:JSON.stringify(result)}] }; }
+        });
+        await document.modelContext.registerTool({
+          name: 'filter_flights', description: 'Filter the flight results currently displayed on Roamwise.',
+          inputSchema: { type:'object', properties: { directOnly:{type:'boolean'}, maxPrice:{type:'number'}, sortBy:{type:'string',enum:['price','value']} } },
+          annotations: { readOnlyHint: true }, execute(args) { const result = filterFlights(args); return { content:[{type:'text',text:JSON.stringify(result)}] }; }
+        });
+        await document.modelContext.registerTool({
+          name: 'select_flight', description: 'Select one flight from the current results and reveal the traveler-details tool.',
+          inputSchema: { type:'object', properties:{ flightId:{type:'string',description:'Flight identifier returned by search_flights.'} }, required:['flightId'] },
+          execute(args) { return selectFlight(args); }
+        });
+        $('#toolStatus').classList.add('native'); $('#toolStatusText').textContent = '3 WebMCP tools live';
+        $('#instructionStatusTitle').textContent = 'Native WebMCP is active'; $('#instructionStatusCopy').textContent = 'A compatible agent can discover this page’s tools now.'; $('.instruction-status .tool-dot').style.background = '#3fb36b';
+      } catch (error) { console.info('WebMCP demo mode:', error.message); }
+    }
+    window.addEventListener('toolactivated', event => { if (event.toolName === 'prepare_booking') $('#bookingSection').classList.add('visible', 'agent-active'); });
+    if (window.innerWidth < 820) closeAgent();
+    registerNativeTools();
+  </script>
+</body>
+</html>

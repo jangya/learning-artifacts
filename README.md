@@ -15,6 +15,7 @@ This repository is mainly for:
 The repository currently includes a folder for each topic or concept. For example:
 
 - distance-metrics/: contains a UI-based artifact related to distance metrics
+- webmcp/: contains a working travel-agency demo that exposes search and booking tools to browser agents through WebMCP
 
 Each topic folder typically contains an index.html file, which can be opened directly in a browser or deployed as a GitHub Pages page.
 
