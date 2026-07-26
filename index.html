@@ -314,6 +314,23 @@
         text-align: center;
       }
 
+      .site-footer {
+        padding: 0 16px 32px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .site-footer a {
+        color: var(--cyan);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .site-footer a:hover {
+        text-decoration: underline;
+      }
+
       @media (max-width: 700px) {
         .hero {
           padding: 24px;
@@ -368,6 +385,10 @@
         repository grows.
       </p>
     </main>
+
+    <footer class="site-footer">
+      Built with love by <a href="https://jangya.github.io">Jangya</a>
+    </footer>
 
     <script>
       const artifacts = [

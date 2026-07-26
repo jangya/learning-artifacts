@@ -235,7 +235,7 @@
     .toast { position: fixed; z-index: 80; left: 50%; bottom: 22px; transform: translate(-50%, 25px); opacity: 0; pointer-events: none; background: var(--ink); color: white; padding: 11px 15px; border-radius: 10px; font-size: 11px; transition: .25s; box-shadow: var(--shadow); }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
     footer { padding: 24px 0 38px; color: var(--muted); font-size: 11px; border-top: 1px solid var(--line); background: white; }
-    .footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+    .footer-inner { display: flex; justify-content: center; gap: 20px; text-align: center; }
     .footer-inner a { color: var(--green-2); }
 
     @media (max-width: 1080px) {
@@ -360,7 +360,7 @@
       </section>
     </main>
 
-    <footer><div class="shell footer-inner"><span>Roamwise is a fictional travel agency. No network request or purchase is made.</span><span><a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noreferrer">About WebMCP ↗</a></span></div></footer>
+    <footer><div class="shell footer-inner">Built with love by <a href="https://jangya.github.io">Jangya</a></div></footer>
   </div>
 
   <button class="agent-launcher" id="agentLauncher" aria-label="Open travel assistant">✦</button>
