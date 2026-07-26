@@ -693,57 +693,6 @@
 <hr class="divider">
 
 <!-- ═══════════════════════════════════════════════
-     INTERACTIVE CANVAS
-════════════════════════════════════════════════ -->
-<section id="demo">
-  <p class="section-eyebrow">// interactive_demo</p>
-  <h2>Draw Your Own Path</h2>
-  <p class="section-intro">
-    Click to place points and build a path. Watch all three distances update in real time.
-    The gap between them tells the whole story.
-  </p>
-
-  <div class="canvas-container">
-    <div class="canvas-toolbar">
-      <button class="tool-btn active" id="btnDraw" onclick="setMode('draw')">✏️ Draw</button>
-      <button class="tool-btn danger" onclick="clearCanvas()">⟳ Clear</button>
-      <button class="tool-btn" onclick="loadExample()">📐 Load Example</button>
-      <span class="canvas-hint">Click to add points · Double-click to finish</span>
-    </div>
-    <canvas id="mainCanvas" height="340"></canvas>
-
-    <div class="stats-grid">
-      <div class="stat-card" id="statZigzag">
-        <div class="stat-label" style="color:var(--red)">Zigzag Path</div>
-        <div class="stat-value" style="color:var(--red)" id="valZigzag">—</div>
-        <div class="stat-formula">Σ √(Δxᵢ² + Δyᵢ²)</div>
-      </div>
-      <div class="stat-card" id="statManhattan">
-        <div class="stat-label" style="color:var(--blue)">Manhattan</div>
-        <div class="stat-value" style="color:var(--blue)" id="valManhattan">—</div>
-        <div class="stat-formula">|x₂−x₁| + |y₂−y₁|</div>
-      </div>
-      <div class="stat-card" id="statEuclidean">
-        <div class="stat-label" style="color:var(--green)">Euclidean</div>
-        <div class="stat-value" style="color:var(--green)" id="valEuclidean">—</div>
-        <div class="stat-formula">√((x₂−x₁)² + (y₂−y₁)²)</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="rule-box">
-    <div class="rule-title">// The Golden Rule</div>
-    <div class="rule-text">
-      <span>Zigzag ≥ Manhattan ≥ Euclidean</span> — always.<br>
-      The straight line is the absolute shortest distance between any two points.
-      Every other path is longer or equal. No exceptions.
-    </div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- ═══════════════════════════════════════════════
      WHERE IT LIVES IN THE REAL WORLD
 ════════════════════════════════════════════════ -->
 <section id="applications">
@@ -798,6 +747,57 @@
       <span class="tag" style="background:rgba(0,245,255,0.1);color:var(--cyan)">MANHATTAN (4) / EUCLIDEAN (8)</span>
     </div>
 
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════
+     INTERACTIVE CANVAS
+════════════════════════════════════════════════ -->
+<section id="demo">
+  <p class="section-eyebrow">// interactive_demo</p>
+  <h2>Draw Your Own Path</h2>
+  <p class="section-intro">
+    Click to place points and build a path. Watch all three distances update in real time.
+    The gap between them tells the whole story.
+  </p>
+
+  <div class="canvas-container">
+    <div class="canvas-toolbar">
+      <button class="tool-btn active" id="btnDraw" onclick="setMode('draw')">✏️ Draw</button>
+      <button class="tool-btn danger" onclick="clearCanvas()">⟳ Clear</button>
+      <button class="tool-btn" onclick="loadExample()">📐 Load Example</button>
+      <span class="canvas-hint">Click to add points · Double-click to finish</span>
+    </div>
+    <canvas id="mainCanvas" height="340"></canvas>
+
+    <div class="stats-grid">
+      <div class="stat-card" id="statZigzag">
+        <div class="stat-label" style="color:var(--red)">Zigzag Path</div>
+        <div class="stat-value" style="color:var(--red)" id="valZigzag">—</div>
+        <div class="stat-formula">Σ √(Δxᵢ² + Δyᵢ²)</div>
+      </div>
+      <div class="stat-card" id="statManhattan">
+        <div class="stat-label" style="color:var(--blue)">Manhattan</div>
+        <div class="stat-value" style="color:var(--blue)" id="valManhattan">—</div>
+        <div class="stat-formula">|x₂−x₁| + |y₂−y₁|</div>
+      </div>
+      <div class="stat-card" id="statEuclidean">
+        <div class="stat-label" style="color:var(--green)">Euclidean</div>
+        <div class="stat-value" style="color:var(--green)" id="valEuclidean">—</div>
+        <div class="stat-formula">√((x₂−x₁)² + (y₂−y₁)²)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <div class="rule-title">// The Golden Rule</div>
+    <div class="rule-text">
+      <span>Zigzag ≥ Manhattan ≥ Euclidean</span> — always.<br>
+      The straight line is the absolute shortest distance between any two points.
+      Every other path is longer or equal. No exceptions.
+    </div>
   </div>
 </section>
 
