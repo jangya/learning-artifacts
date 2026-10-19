@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breakpoint UI vs Differentiable UI — Layout Lab</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--paper:#f5f4ef;--ink:#24332f;--muted:#6b746e;--line:#dedfd6;--green:#32694e;--lime:#d2e7a4;--copper:#a74d30;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #a74d30;outline-offset:3px}
+button{border:1px solid var(--line);color:inherit;background:transparent;border-radius:7px;padding:9px 13px}
+button:hover{background:#e9ece2}
+button[aria-pressed=true]{background:var(--ink);color:white;border-color:var(--ink)}
+.topbar{height:65px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+.brand{font-size:15px;font-weight:750;letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
+.mark{display:grid;grid-template-columns:repeat(2,7px);gap:3px;transform:rotate(-8deg)}
+.mark i{width:7px;height:7px;background:var(--green)}
+.edition,.eyebrow{font:10px var(--mono);letter-spacing:1.6px;text-transform:uppercase}
+.edition{color:var(--muted)}
+main{max-width:1800px;margin:auto;padding:34px 32px 26px}
+.intro{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;gap:20px}
+.eyebrow{color:var(--green);margin:0 0 12px}
+h1{font-size:clamp(26px,2.7vw,40px);font-weight:550;letter-spacing:-1.7px;margin:0 0 12px}
+h1 span{color:#a5a99c;font-family:Georgia,serif;font-style:italic;font-weight:400;margin:0 4px}
+.subtitle{color:var(--muted);margin:0;font-size:14px;line-height:1.6}
+.badge{white-space:nowrap;padding:8px 10px;border:1px solid #cdd9c1;border-radius:30px;font:10px var(--mono);color:var(--green)}
+.badge:before{content:'●';font-size:8px;margin-right:7px}
+.workbench{display:grid;grid-template-columns:minmax(0,1fr) 345px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fafbf7;box-shadow:0 8px 30px #263d2610}
+.workspace{min-width:0;border-right:1px solid var(--line)}
+.toolbar{display:flex;gap:15px;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line);background:#fffefb}
+.segmented{display:flex;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.segmented button{border:0;padding:8px 11px;font-size:12px}
+.mode-label{font:10px var(--mono);color:var(--muted);text-align:right}
+.resize{display:flex;align-items:center;gap:14px;padding:19px 20px 13px}
+.resize label{font-size:11px;font-weight:600;white-space:nowrap}
+.slider-wrap{flex:1;min-width:60px}
+input[type=range]{width:100%;accent-color:var(--green);height:15px;margin:0;cursor:ew-resize}
+.range-ends{display:flex;justify-content:space-between;font:9px var(--mono);color:var(--muted);margin-top:5px}
+.width-value{font:12px var(--mono);min-width:63px}
+#auto{font-size:11px;white-space:nowrap;padding:9px 10px}
+.preview-meta{padding:7px 20px 12px;display:flex;justify-content:space-between;gap:8px;font:9px var(--mono);color:var(--muted);letter-spacing:.4px}
+.preview-surface{position:relative;background:#e8ebe3;background-image:radial-gradient(#b6bfb2 0.7px,transparent .7px);background-size:12px 12px;padding:22px 18px 26px;overflow:hidden;min-height:400px}
+.viewport-shell{margin:auto;position:relative;max-width:100%;box-shadow:0 5px 25px #2448330c}
+.viewport{position:absolute;left:0;top:0;transform-origin:top left;background:#f4f6f0;border:0;box-shadow:inset 0 0 0 1px #d8dfd0;border-radius:8px;overflow:hidden}
+.dashboard-nav{height:62px;margin:0 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dce2d6}
+.dashboard-brand{font-size:19px;font-weight:750;letter-spacing:-.8px}
+.dashboard-brand b{color:var(--green)}
+.avatar{background:#dbe7cc;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font:10px var(--mono)}
+.dashboard-heading{height:83px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.dashboard-heading h2{font-size:21px;font-weight:600;letter-spacing:-.5px;margin:0 0 5px}
+.dashboard-heading p{margin:0;font-size:11px;color:var(--muted)}
+.date-chip{border:1px solid #d7ddcf;padding:7px 10px;border-radius:5px;font-size:10px}
+.cards{position:relative}
+.card{position:absolute;overflow:hidden;border:1px solid #dce2d7;background:#fffefb;border-radius:9px;box-shadow:0 2px 3px #26422b03;display:flex;flex-direction:column;gap:9px}
+.card.featured{background:#253e32;color:#f2f6e9;border-color:#253e32}
+.card-title{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:500;flex-shrink:0}
+.card-title span{font-size:12px;opacity:.5}
+.amount{font-size:29px;letter-spacing:-1px;font-weight:600;flex-shrink:0}
+.amount small{font-size:12px;letter-spacing:0;color:var(--muted);font-weight:400}
+.delta{font-size:10px;color:var(--green)}
+.featured .delta{color:#c7e19e}
+.chart{flex:1;min-height:30px;position:relative;display:flex;align-items:end;gap:7px}
+.chart svg{width:100%;height:100%;position:absolute;inset:0}
+.chart-footer{font:9px var(--mono);display:flex;justify-content:space-between;opacity:.65}
+.bar{flex:1;border-radius:3px 3px 0 0;background:#a2b997}
+.bar:nth-child(3n){background:#376c50}
+.bar:nth-child(2n){background:#d1ddc5}
+.flow{display:flex;align-items:end;gap:4px;flex:1;height:100%}
+.flow i{width:45%;background:#426d52;border-radius:3px 3px 0 0}
+.flow i+ i{background:#d7b389}
+.budget-track{height:9px;background:#edf0e8;border-radius:8px;overflow:hidden;margin:12px 0}
+.budget-track i{display:block;width:68%;height:100%;background:#71905c}
+.budget-details{font-size:11px;line-height:2.2}
+.budget-details span{color:var(--muted)}
+.allocation{display:flex;align-items:center;gap:20px;flex:1}
+.donut{width:100px;aspect-ratio:1;flex-shrink:0;border-radius:50%;background:conic-gradient(#436d50 0 58%,#abc18a 58% 85%,#e2c8a4 85%);position:relative}
+.donut:after{content:'3 assets';position:absolute;inset:19px;border-radius:50%;background:#fffefb;display:grid;place-items:center;font-size:10px;color:var(--muted)}
+.legend{font-size:10px;line-height:2.2}
+.legend i{display:inline-block;width:6px;height:6px;background:#436d50;border-radius:2px;margin-right:6px}
+.transaction{display:flex;align-items:center;gap:8px;border-top:1px solid #eff0ea;padding:9px 0;font-size:10px}
+.transaction:first-child{border-top:0}
+.transaction-icon{width:25px;height:25px;display:grid;place-items:center;background:#f0f1e8;border-radius:6px;font-weight:700}
+.transaction b{font-weight:500}
+.transaction small{display:block;color:var(--muted);font-size:8px;margin-top:3px}
+.transaction strong{margin-left:auto;font-size:10px;font-weight:500}
+.workspace-note{padding:14px 20px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line)}
+.workspace-note b{color:var(--ink);font-weight:550}
+.optimizer{background:#fffefb;padding:21px 20px;min-width:0}
+.panel-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.panel-heading h2{font-size:15px;margin:0;font-weight:600}
+.status{font:9px var(--mono);color:var(--green)}
+.status.running{color:var(--copper)}
+.section-label{font:9px var(--mono);letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;margin:18px 0 10px}
+.presets{display:flex;gap:5px}
+.presets button{font-size:10px;padding:8px 9px;flex:1;white-space:nowrap}
+#preset-hint{font-size:10px;color:var(--muted);line-height:1.5;min-height:30px;margin:9px 0 15px}
+.objective-control{border-top:1px solid var(--line);padding:13px 0 16px}
+.objective-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-size:11px}
+.objective-heading output{font:11px var(--mono);color:var(--green)}
+.objective-help{font-size:10px;color:var(--muted);line-height:1.5;margin:9px 0 0}
+#objective-kind{float:right;letter-spacing:0;color:var(--copper)}
+.loss-heading{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.loss-heading span:last-child{font:10px var(--mono);color:var(--muted)}
+.loss-number{font:33px var(--mono);letter-spacing:-1.5px;margin:8px 0 0}
+.loss-number small{font-size:10px;letter-spacing:0;color:var(--muted)}
+#loss-chart{display:block;width:100%;height:62px;margin:9px 0 2px;background:linear-gradient(transparent 49%,#e9ece4 50%,transparent 51%);border-bottom:1px solid var(--line)}
+#loss-trail{font:9px var(--mono);color:var(--muted);min-height:13px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:17px 0;border-bottom:1px solid var(--line)}
+.metric{font-size:10px;color:var(--muted)}
+.metric small{display:block;font:9px var(--mono);margin-top:5px}
+.metric strong{display:block;font:15px var(--mono);margin-top:5px;color:var(--ink)}
+.parameter-table{width:100%;border-collapse:collapse;font:10px var(--mono)}
+.parameter-table th{text-align:right;font-size:8px;font-weight:400;color:var(--muted);padding-bottom:9px}
+.parameter-table th:first-child{text-align:left}
+.parameter-table td{padding:7px 0;border-top:1px solid #edf0e8;text-align:right}
+.parameter-table td:first-child{text-align:left;color:var(--muted)}
+.parameter-table td:last-child{color:var(--copper)}
+.pathways{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:17px}
+.path{border:1px solid var(--line);border-radius:7px;padding:10px 6px;text-align:center;font:10px var(--mono);line-height:1.7;transition:background .15s,border-color .15s}
+.path strong{font-size:8px;font-weight:500;letter-spacing:1px;color:var(--muted)}
+.path .arrow{color:#a3ac9d;line-height:1.2}
+.path.active{border-color:#c8947e;background:#faf0e8}
+.path.active strong{color:var(--copper)}
+.topology{font:9px var(--mono);color:var(--muted);line-height:1.7;margin-top:12px}
+.below{display:flex;justify-content:space-between;align-items:start;gap:30px;padding-top:20px}
+details{max-width:890px;flex:1}
+summary{cursor:pointer;font-size:12px;font-weight:550}
+details p,details li{font-size:12px;line-height:1.8;color:var(--muted)}
+details code{font-family:var(--mono);color:var(--ink);font-size:11px}
+details a,footer a{color:var(--green)}
+.formula{padding:12px 15px;background:#eaece3;border-radius:7px;overflow-x:auto}
+footer{font:9px var(--mono);color:var(--muted);line-height:1.9;text-align:right}
+.error{color:#a12626;padding:20px;background:#fff3ee}
+.traditional .backward{opacity:.35}
+
+@media(max-width:1000px){main{padding:25px 18px}
+.topbar{padding:0 18px}
+.workbench{grid-template-columns:minmax(0,1fr) 310px}
+.optimizer{padding:18px 15px}
+.toolbar{align-items:start;flex-direction:column;gap:9px}
+.mode-label{text-align:left}
+.intro .badge{display:none}
+.resize{flex-wrap:wrap}
+.resize label{display:none}
+}
+
+@media(max-width:720px){.workbench{grid-template-columns:1fr}
+.workspace{border-right:0}
+.optimizer{border-top:1px solid var(--line)}
+.toolbar{flex-direction:row;align-items:center}
+.mode-label{max-width:120px;text-align:right}
+.below{flex-direction:column}
+footer{text-align:left}
+.edition{display:none}
+.intro{margin-bottom:20px}
+h1{letter-spacing:-1px}
+.subtitle{font-size:12px}
+.preview-surface{min-height:250px}
+}
+
+</style>
+</head>
+<body>
+<header class="topbar"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Layout Lab <span style="color:#a4aa9d;font-weight:400">/ experiments</span></div><div class="edition">№ 001 · Differentiable programming</div></header>
+<main>
+<section class="intro"><div><p class="eyebrow">A small experiment in inverse UI</p><h1>Breakpoint UI <span>vs</span> Differentiable UI</h1><p class="subtitle">Instead of telling the layout where everything goes, describe what a good layout means.</p></div><span class="badge">Deterministic. Local. No model.</span></section>
+<div class="workbench">
+<section class="workspace" aria-label="Dashboard experiment">
+<div class="toolbar"><div class="segmented" aria-label="Layout mode"><button id="traditional" aria-pressed="false">Traditional</button><button id="differentiable" aria-pressed="true">Differentiable</button></div><div class="mode-label" id="mode-label">Layout follows the loss ↘</div></div>
+<div class="resize"><label for="width">Viewport width</label><div class="slider-wrap"><input id="width" type="range" min="480" max="1440" value="1120" step="1" aria-label="Simulated viewport width"><div class="range-ends"><span>480 px</span><span>1440 px</span></div></div><output class="width-value" id="width-value" for="width">1120 px</output><button id="auto" aria-pressed="false">▷ Auto Resize</button></div>
+<div class="preview-meta"><span>SIMULATED VIEWPORT <span id="scale-label"></span></span><span id="geometry-label">6 cards · continuous geometry</span></div>
+<div class="preview-surface"><div class="viewport-shell" id="viewport-shell"><div class="viewport" id="viewport"><div class="dashboard-nav"><div class="dashboard-brand"><b>◒</b> folio<span style="color:#7c8778;font-weight:400">.</span></div><span style="font-size:11px;color:var(--muted)">Personal workspace</span><div class="avatar">JS</div></div><div class="dashboard-heading"><div><h2>Your money, at a glance</h2><p>A little clarity for your everyday finances.</p></div><span class="date-chip">October 2026</span></div><div id="cards" class="cards"></div></div></div></div>
+<div class="workspace-note"><b>Same program. Different priorities.</b> Resize the viewport or change an objective. Watch the loss rise, gradients flow backward, and the layout settle.</div>
+</section>
+<aside class="optimizer" aria-label="Optimizer debugging panel"><div class="panel-heading"><h2>Optimizer <span style="font-weight:400;color:#92998b">↗</span></h2><span class="status" id="status" role="status">● Optimizing</span></div>
+<div class="section-label">Objective preset <span id="objective-kind" hidden>Custom</span></div><div class="presets"><button data-preset="compact" aria-pressed="false">Compact</button><button data-preset="readable" aria-pressed="true">Readable</button><button data-preset="charts" aria-pressed="false">Charts First</button></div><p id="preset-hint"></p>
+<div class="objective-control"><div class="objective-heading"><label for="space-efficiency">Space efficiency</label><output id="space-efficiency-value" for="space-efficiency">1.0×</output></div><input id="space-efficiency" type="range" min="0" max="3" step="0.1" value="1" aria-describedby="space-efficiency-help"><div class="range-ends"><span>Relaxed</span><span>Compact</span></div><p class="objective-help" id="space-efficiency-help">Scales the wasted-space penalty. Higher weights favor fuller rows and tighter gaps.</p></div>
+<div class="loss-heading"><span>Total layout loss</span><span id="iterations">iteration 0</span></div><div class="loss-number" id="loss-number">—</div><svg id="loss-chart" viewBox="0 0 300 62" preserveAspectRatio="none" role="img" aria-label="Loss history, newest value on the right"><path id="loss-fill" fill="#dce8c899"></path><path id="loss-line" fill="none" stroke="#52744b" stroke-width="2"></path></svg><div id="loss-trail"></div>
+<div class="metrics"><div class="metric">Viewport<strong id="metric-width">1120 px</strong></div><div class="metric">Overflow<strong id="overflow">—</strong></div><div class="metric">Overlap<strong id="overlap">—</strong></div><div class="metric">Wasted space <span title="Includes intentional outer gutters and gaps">ⓘ</span><strong id="waste">—</strong><small id="right-slack">Right slack: —</small></div></div>
+<div class="section-label">Parameters <span style="float:right;letter-spacing:0">actual ∂loss / ∂px</span></div><table class="parameter-table"><thead><tr><th>Parameter</th><th>start → now</th><th>gradient</th></tr></thead><tbody id="parameters"></tbody></table>
+<div class="pathways"><div class="path" id="forward"><strong>Forward</strong><div>parameters</div><div class="arrow">↓</div><div>layout()</div><div class="arrow">↓</div><div>geometry → loss</div></div><div class="path backward" id="backward"><strong>Backward</strong><div>loss</div><div class="arrow">↓</div><div>gradients</div><div class="arrow">↓</div><div>parameters</div></div></div><div class="topology" id="topology"></div>
+</aside></div>
+<div class="below"><details><summary>How does this work?</summary><p>Start with ordinary deterministic JavaScript: parameters go into <code>layout()</code> and out come six rectangles. Handwired does not parse this source automatically: we explicitly record the same arithmetic with its <code>Circuit</code> builder. It represents compatible computation with neural-network-like weighted sums and ReLU-gated products. There is no dataset, pretrained model, LLM, or service call.</p><p>The forward pass still computes the deterministic program. The loss is also inside the circuit. Seeding its derivative with 1 lets <code>backpropagateReference()</code> calculate how each adjustable input affects it. Projected gradient descent changes those four inputs, then renders the circuit's new geometry.</p><p class="formula"><code>parameters → layout → geometry → loss<br>desired UI properties → loss → gradients → better parameters</code></p><p><b>The discrete boundary:</b> a column count is not differentiable. Ordinary JavaScript enumerates 1, 2, and 3 columns; each candidate holds its count fixed while Handwired optimizes width, gap, chart height, and padding. The lowest-loss feasible candidate wins (minimum card width: 200 px). A column change can still jump. No gradients through column selection, DOM measurements, text wrapping, or CSS are claimed.</p><p><b>The objective:</b> 100 × squared overflow / viewport² + 100 × pairwise intersection area / 100,000 + wasteWeight × (0.25 × unused row width / viewport + squared unused row width / viewport² + (gap / 100)²) + 0.002 × mean squared geometry movement / 100,000 + ((width − preferredWidth) / preferredWidth)² + 0.8 × ((chartHeight − preferredChart) / 100)² + 0.3 × ((padding − preferredPadding) / 20)² + 0.6 × ((gap − preferredGap) / 20)². The Space efficiency slider controls wasteWeight; selecting a preset restores its weight. Manual edits keep the other preferences and mark the objective Custom. Waste readout is the actual empty fraction of the card region; the loss uses the simpler differentiable surrogate above. Positive gaps make overlap zero by construction; its penalty is retained and measured, but is inactive in this version.</p><p>Movement references are frozen at the start of each solve. Bounds keep parameters readable; a feasibility projection keeps a row inside its viewport after each update. Backtracking evaluates the same objective and rejects uphill steps. Every 60 ms, one step per candidate is attempted, with width/gap and chart/padding in separate descent blocks so an edge constraint cannot stall content sizing. At a fixed width the best loss is non-increasing, but a new viewport or objective changes the function and may raise it. FP32 derivatives treat rounding as real arithmetic; ReLU's slope is zero at its corner.</p><p><b>A real step through the program:</b> <span id="gap-trace"></span></p><p><b>Why Handwired?</b> It supplies the recorded forward computation and its real reverse-mode derivatives. Plain JavaScript alone does not supply those derivatives. For a production dashboard, CSS Grid is simpler, handles intrinsic content and accessibility better, and needs no iterative solver. This is an inverse-problem teaching experiment, not AI generating a UI.</p><p>Source inspected: <a href="https://github.com/chenglou/handwired/tree/4ea7fcb27ebe93acf49b9f29a93e162b975bad46">Handwired @ 4ea7fcb</a> · <a href="https://github.com/chenglou/handwired/blob/4ea7fcb27ebe93acf49b9f29a93e162b975bad46/docs/tutorial.md">tutorial</a> · <a href="https://github.com/chenglou/handwired/blob/4ea7fcb27ebe93acf49b9f29a93e162b975bad46/src/learned-gallery/trainable-geometry.ts">learned-gallery backprop</a>.</p></details><footer>BUILT WITH HANDWIRED<br>6 cards · 4 adjustable inputs · 0 training examples</footer></div>
+<div id="error" role="alert" hidden></div>
+</main>
+<script type="module">
+import {Circuit, emitMultiply} from './vendor/handwired.js';
+
+// ── 1. STATE ──────────────────────────────────────────────────────────────
+const parameterNames = ['preferredWidth', 'gap', 'chartHeight', 'padding'];
+const bounds = [[200,650], [8,28], [90,210], [12,30]];
+const presets = {
+  compact: {width:290, gap:10, chart:100, padding:13, waste:3, hint:'Prioritize filled space. Smaller preferred cards and padding.'},
+  readable: {width:350, gap:16, chart:140, padding:22, waste:1, hint:'Give content room. Prefer wider cards and generous padding.'},
+  charts: {width:420, gap:20, chart:195, padding:18, waste:1, hint:'Give charts room. Prefer wider cards and taller chart regions.'}
+};
+const state = {width:1120, mode:'differentiable', preset:'readable', wasteWeight:1, customObjective:false, candidates:[], winner:null,
+  previousGeometry:null, history:[], iteration:0, auto:false, running:true, baseline:null};
+const $ = id => document.getElementById(id);
+
+// ── 2. NORMAL DETERMINISTIC LAYOUT ─────────────────────────────────────────
+// No viewport breakpoints here. A fixed column count is supplied by the host.
+// This reference is checked against Handwired, whose geometry is actually drawn.
+function layout(parameters, columns) {
+  const [width,gap,chartHeight,padding] = parameters;
+  const height = 112 + chartHeight + 2 * padding;
+  return Array.from({length:6}, (_,i) => ({
+    x:24 + (i % columns) * (width + gap),
+    y:Math.floor(i / columns) * (height + gap), width, height
+  }));
+}
+function traditionalLayout() {
+  // Explicit, conventional breakpoints belong only to Traditional mode.
+  const columns = state.width >= 1000 ? 3 : state.width >= 680 ? 2 : 1;
+  const gap = columns === 1 ? 12 : 18;
+  const parameters = [(state.width - 48 - (columns-1)*gap)/columns,gap,130,20];
+  return {columns, parameters, geometry:layout(parameters,columns)};
+}
+
+// ── 3. HANDWIRED / DIFFERENTIABLE REPRESENTATION ──────────────────────────
+function buildCandidate(columns, startingParameters, previousGeometry) {
+  // HANDWIRED: Four adjustable source cells; every other number is frozen for
+  // this solve. No network weights are trained and no examples are supplied.
+  const circuit = new Circuit(4);
+  const wires = parameterNames.map((_,i) => circuit.source(i));
+  const [width,gap,chartHeight,padding] = wires;
+  const add = (terms,bias=0) => circuit.affine(terms,bias);
+  const multiply = (a,b) => emitMultiply(circuit,a,b);
+  const relu = a => circuit.reglu([],1,[[a,1]],0);
+  const square = a => multiply(a,a);
+  const minimum = (a,b) => add([[a,1],[relu(add([[a,1],[b,-1]])),-1]]);
+  const maximum = (a,b) => add([[b,1],[relu(add([[a,1],[b,-1]])),1]]);
+  const height = add([[chartHeight,1],[padding,2]],112);
+  const geometry = Array.from({length:6}, (_,i) => {
+    const col=i%columns, row=Math.floor(i/columns);
+    const x=add([[width,col],[gap,col]],24);
+    const y=add([[height,row],[gap,row]]);
+    return {x,y,width,height,right:add([[x,1],[width,1]]),bottom:add([[y,1],[height,1]])};
+  });
+
+  // ── 4. LOSS FUNCTION ───────────────────────────────────────────────────
+  // All loss terms are circuit wires. No manually supplied loss derivatives.
+  const preference=presets[state.preset];
+  const rowWidth=add([[width,columns],[gap,columns-1]],48);
+  const overflow=relu(add([[rowWidth,1]],-state.width));
+  const unused=relu(add([[rowWidth,-1]],state.width));
+  const overflowLoss=add([[square(overflow),100/(state.width*state.width)]]);
+  const overlapAreas=[];
+  for(let a=0;a<6;a++) for(let b=a+1;b<6;b++) {
+    const first=geometry[a],second=geometry[b];
+    const dx=relu(add([[minimum(first.right,second.right),1],[maximum(first.x,second.x),-1]]));
+    const dy=relu(add([[minimum(first.bottom,second.bottom),1],[maximum(first.y,second.y),-1]]));
+    overlapAreas.push(multiply(dx,dy));
+  }
+  const overlapArea=add(overlapAreas.map(wire=>[wire,1]));
+  const overlapLoss=add([[overlapArea,100/100000]]);
+  // The objective slider changes this frozen coefficient, not card geometry.
+  // Rebuilding the circuit gives Handwired the new loss to differentiate.
+  // A squared slack penalty alone fades near the edge and balances against
+  // preferred width before the row is full. The linear hinge keeps a real
+  // gradient toward the right gutter, including at the widest viewport.
+  const wasteLoss=add([[unused,.25*state.wasteWeight/state.width],
+    [square(unused),state.wasteWeight/(state.width*state.width)],
+    [square(gap),state.wasteWeight/10000]]);
+  const movement=[];
+  if(previousGeometry) geometry.forEach((rectangle,i)=>{
+    for(const key of ['x','y','width','height']) {
+      movement.push(square(add([[rectangle[key],1]],-previousGeometry[i][key])));
+    }
+  });
+  const movementLoss=add(movement.map(wire=>[wire,.002/(24*100000)]));
+  const widthError=add([[width,1]],-preference.width);
+  const gapError=add([[gap,1]],-preference.gap);
+  const chartError=add([[chartHeight,1]],-preference.chart);
+  const paddingError=add([[padding,1]],-preference.padding);
+  const preferenceLoss=add([[square(widthError),1/(preference.width**2)],
+    [square(chartError),.8/10000],[square(paddingError),.3/400],[square(gapError),.6/400]]);
+  const loss=add([[overflowLoss,1],[overlapLoss,1],[wasteLoss,1],[movementLoss,1],[preferenceLoss,1]]);
+  const candidate={columns,circuit,geometry,loss,overflow,overlapArea,
+    source:new Float32Array(startingParameters),gradients:new Float32Array(4),
+    start:[...startingParameters], values:null, stepSize:1, lastStep:null};
+  evaluate(candidate);
+  return candidate;
+}
+function evaluate(candidate) {
+  candidate.values=candidate.circuit.evaluateReference(candidate.source);
+  if(!candidate.values.every(Number.isFinite)) throw new Error('Non-finite circuit value');
+  return candidate.values[candidate.loss];
+}
+function readGeometry(candidate) {
+  return candidate.geometry.map(rectangle=>Object.fromEntries(['x','y','width','height']
+    .map(key=>[key,candidate.values[rectangle[key]]])));
+}
+
+// ── 5. GRADIENT / OPTIMIZATION STEP ───────────────────────────────────────
+function differentiate(candidate) {
+  const seed=new Float32Array(candidate.values.length);
+  seed[candidate.loss]=1;
+  // BACKPROP: This is Handwired's actual reverse-mode pass. Cell 1's gradient
+  // tells us how changing `gap` by a pixel would affect the final layout loss.
+  const allGradients=candidate.circuit.backpropagateReference(candidate.values,seed);
+  candidate.gradients=allGradients.slice(0,4);
+  if(!candidate.gradients.every(Number.isFinite)) throw new Error('Non-finite gradient');
+}
+function optimizationStep(candidate) {
+  // Optimize horizontal geometry and content sizing in separate blocks. At a
+  // full row the ReLU has a corner; a rejected width step must not prevent
+  // chart height and padding from following their own valid gradients.
+  const scales=[6000,500,1800,400];
+  for(const parameterBlock of [[0,1],[2,3]]) {
+    const oldSource=candidate.source.slice();
+    const before=evaluate(candidate);
+    differentiate(candidate);
+    const beforeGradients=candidate.gradients.slice();
+    let rate=1;
+    let after=before;
+    for(let attempt=0;attempt<16;attempt++) {
+      candidate.source.set(oldSource);
+      for(const i of parameterBlock) {
+        // Cap each proposed change at 12 px so convergence stays observable.
+        candidate.source[i]=Math.max(bounds[i][0],Math.min(bounds[i][1],
+          oldSource[i]-rate*Math.max(-12,Math.min(12,beforeGradients[i]*scales[i]))));
+      }
+      if(parameterBlock[0]===0) {
+        // This host constraint only removes overflow; it never stretches an
+        // underfilled row. Filling the row must come from the loss gradient.
+        const maximumWidth=(state.width-48-(candidate.columns-1)*candidate.source[1])/candidate.columns;
+        if(maximumWidth<bounds[0][0]) {candidate.source.set(oldSource);break;}
+        candidate.source[0]=Math.min(candidate.source[0],maximumWidth);
+      }
+      after=evaluate(candidate);
+      if(after<=before) break;
+      candidate.source.set(oldSource);
+      rate*=.5;
+    }
+    if(after>before) {candidate.source.set(oldSource);after=evaluate(candidate);}
+    if(parameterBlock[0]===0) {
+      candidate.lastStep={before:[...oldSource],gradient:[...beforeGradients],after:[...candidate.source],rate,lossBefore:before,lossAfter:after};
+      if(!candidate.firstStep) candidate.firstStep=candidate.lastStep;
+    }
+  }
+  // Display derivatives evaluated at the inputs that are actually drawn.
+  differentiate(candidate);
+}
+function chooseWinner() {
+  const feasible=state.candidates.filter(candidate=>candidate.columns*bounds[0][0]+(candidate.columns-1)*bounds[1][0]+48<=state.width);
+  return feasible.reduce((best,candidate)=>candidate.values[candidate.loss]<best.values[best.loss]?candidate:best);
+}
+function beginSolve() {
+  const seed=state.winner ? [...state.winner.source] : [340,16,120,18];
+  state.previousGeometry=state.winner ? readGeometry(state.winner) : layout(seed,3);
+  state.candidates=[1,2,3].map(columns=>buildCandidate(columns,seed,state.previousGeometry));
+  state.winner=chooseWinner();
+  state.candidates.forEach(differentiate);
+  state.iteration=0;
+  state.history=[state.winner.values[state.winner.loss]];
+  state.baseline=state.history[0];
+  state.running=true;
+}
+function solveTick() {
+  if(state.mode!=='differentiable'||!state.running) return;
+  state.candidates.forEach(optimizationStep);
+  state.winner=chooseWinner();
+  state.iteration++;
+  state.history.push(state.winner.values[state.winner.loss]);
+  // Stop on measured improvement after a visible minimum duration, or a cap.
+  const recent=state.history.slice(-12);
+  if(state.iteration>=160||(state.iteration>=32&&Math.abs(recent[0]-recent.at(-1))<1e-7)) state.running=false;
+}
+
+// ── 6. DOM RENDERING ─────────────────────────────────────────────────────
+const sparkline='<div class="chart"><svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#cce69b" stop-opacity=".25"/><stop offset="1" stop-color="#cce69b" stop-opacity="0"/></linearGradient></defs><path d="M0 80L25 70 42 75 60 50 80 56 98 40 118 45 138 25 155 32 175 18 195 25 218 8 238 15 260 4 280 12 300 0V100H0Z" fill="url(#area)"/><path d="M0 80L25 70 42 75 60 50 80 56 98 40 118 45 138 25 155 32 175 18 195 25 218 8 238 15 260 4 280 12 300 0" fill="none" stroke="#cce69b" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg></div>';
+const bars='<div class="chart">'+[44,61,49,72,58,86,69,53,75,65,91,70].map(h=>`<i class="bar" style="height:${h}%"></i>`).join('')+'</div>';
+const flows='<div class="chart">'+[62,81,69,91,77,95].map((h,i)=>`<div class="flow"><i style="height:${h}%"></i><i style="height:${h-18-i*2}%"></i></div>`).join('')+'</div>';
+const cardContents=[
+ ['Portfolio Value','<div class="amount">$124,580<span style="font-size:19px;opacity:.6">.00</span></div><div class="delta">↗ 8.2% <span style="opacity:.6">vs. last month</span></div>'+sparkline+'<div class="chart-footer"><span>OCT 01</span><span>OCT 31</span></div>'],
+ ['Monthly Spending','<div class="amount">$3,248<small> / $4,000</small></div><div class="delta" style="color:#8c6a45">↓ 12.4% <span style="color:var(--muted)">less than last month</span></div>'+bars+'<div class="chart-footer"><span>THIS MONTH</span><span>81% OF BUDGET</span></div>'],
+ ['Cash Flow','<div class="amount">+$2,752<small> net</small></div><div class="delta">● Income <span style="color:#b18b5b;margin-left:15px">● Expenses</span></div>'+flows+'<div class="chart-footer"><span>MAY</span><span>OCT</span></div>'],
+ ['Budget','<div class="amount">68<small>% used</small></div><div class="budget-track"><i></i></div><div class="budget-details"><div><span>Essentials</span> <b style="float:right">$1,840</b></div><div><span>Lifestyle</span> <b style="float:right">$920</b></div><div><span>Savings goal</span> <b style="float:right;color:var(--green)">On track ↗</b></div></div>'],
+ ['Investments','<div class="amount">$86,420<small> +6.8%</small></div><div class="allocation"><div class="donut"></div><div class="legend"><div><i></i>Stocks · 58%</div><div><i style="background:#abc18a"></i>Funds · 27%</div><div><i style="background:#e2c8a4"></i>Bonds · 15%</div></div></div>'],
+ ['Recent Transactions','<div style="flex:1">'+[['N','Notion','Software · Today','−$12.00'],['↙','Salary','Income · Oct 14','+$6,000'],['C','Coffee House','Food & drink · Oct 14','−$8.50'],['↗','Index fund','Investment · Oct 12','−$250.00']].map(t=>`<div class="transaction"><span class="transaction-icon">${t[0]}</span><b>${t[1]}<small>${t[2]}</small></b><strong>${t[3]}</strong></div>`).join('')+'</div>']
+];
+$('cards').innerHTML=cardContents.map(([title,content],i)=>`<article class="card ${i===0?'featured':''}" aria-label="${title}"><div class="card-title">${title}<span>↗</span></div>${content}</article>`).join('');
+$('parameters').innerHTML=parameterNames.map(name=>`<tr><td>${name}</td><td id="value-${name}"></td><td id="gradient-${name}"></td></tr>`).join('');
+function render() {
+  const traditional=state.mode==='traditional';
+  const candidate=state.winner;
+  const current=traditional?traditionalLayout():{columns:candidate.columns,parameters:[...candidate.source],geometry:readGeometry(candidate)};
+  const {geometry,parameters,columns}=current;
+  const height=geometry.at(-1).y+geometry.at(-1).height+24;
+  const available=$('viewport-shell').parentElement.clientWidth-36;
+  const scale=Math.min(1,available/state.width);
+  $('viewport-shell').style.width=`${state.width*scale}px`;
+  $('viewport-shell').style.height=`${(height+145)*scale}px`;
+  $('viewport').style.width=`${state.width}px`;
+  $('viewport').style.height=`${height+145}px`;
+  $('viewport').style.transform=`scale(${scale})`;
+  $('cards').style.height=`${height}px`;
+  document.querySelectorAll('.card').forEach((element,i)=>{
+    const rect=geometry[i];
+    Object.assign(element.style,{left:`${rect.x}px`,top:`${rect.y}px`,width:`${rect.width}px`,height:`${rect.height}px`,padding:`${parameters[3]}px`});
+  });
+  $('width-value').textContent=`${state.width} px`;
+  $('metric-width').textContent=`${state.width} px`;
+  $('width').value=state.width;
+  $('scale-label').textContent=`· ${Math.round(scale*100)}% preview scale`;
+  $('mode-label').textContent=traditional?`${columns===3?'Desktop ≥1000':columns===2?'Tablet ≥680':'Mobile <680'} px`:'Layout follows the loss ↘';
+  $('geometry-label').textContent=`6 cards · ${columns} column${columns===1?'':'s'}`;
+  $('preset-hint').textContent=traditional?'Objective controls are available in Differentiable mode.':
+    `${state.customObjective?'Custom weight. ':''}${presets[state.preset].hint}`;
+  $('objective-kind').hidden=!state.customObjective;
+  $('space-efficiency').disabled=traditional;
+  $('space-efficiency').value=state.wasteWeight;
+  $('space-efficiency').setAttribute('aria-valuetext',`${state.wasteWeight.toFixed(1)} times wasted-space penalty`);
+  $('space-efficiency-value').textContent=`${state.wasteWeight.toFixed(1)}×`;
+  document.querySelectorAll('[data-preset]').forEach(button=>{
+    button.disabled=traditional;
+    button.setAttribute('aria-pressed',String(!state.customObjective&&button.dataset.preset===state.preset));
+  });
+  $('status').textContent=traditional?'○ Breakpoint layout':state.running?'● Optimizing':'● Settled';
+  $('status').classList.toggle('running',!traditional&&state.running);
+  const loss=candidate.values[candidate.loss];
+  $('loss-number').innerHTML=traditional?'— <small>optimizer paused</small>':`${loss.toFixed(5)} <small>← ${state.baseline.toFixed(3)}</small>`;
+  $('iterations').textContent=traditional?'no gradient steps':`iteration ${state.iteration}`;
+  const right=Math.max(...geometry.map(r=>r.x+r.width))+24;
+  const wasted=100*(1-geometry.reduce((sum,r)=>sum+r.width*r.height,0)/(state.width*height));
+  $('overflow').textContent=`${Math.max(0,right-state.width).toFixed(1)} px`;
+  $('overlap').textContent=traditional?'0 px²':`${Math.max(0,candidate.values[candidate.overlapArea]).toFixed(1)} px²`;
+  $('waste').textContent=`${wasted.toFixed(1)}%`;
+  $('right-slack').textContent=`Right slack: ${Math.max(0,state.width-right).toFixed(1)} px`;
+  parameterNames.forEach((name,i)=>{
+    $(`value-${name}`).textContent=traditional?parameters[i].toFixed(1):`${candidate.start[i].toFixed(0)} → ${parameters[i].toFixed(1)}`;
+    const derivative=candidate.gradients[i];
+    $(`gradient-${name}`).textContent=traditional?'—':`${derivative>=0?'+':''}${derivative.toExponential(1)}`;
+  });
+  const step=candidate.firstStep;
+  $('gap-trace').textContent=step
+    ? `In this solve’s ${candidate.columns}-column candidate, gap starts at ${step.before[1].toFixed(3)} px. It enters x = 24 + column × (width + gap), row positions, and the unused-space loss. Handwired gives ∂loss/∂gap = ${step.gradient[1].toExponential(5)}. The first update uses a 500× gap scale and a ${step.rate.toFixed(3)} step factor, with a ±12 px cap and [8,28] bounds: gap becomes ${step.after[1].toFixed(3)} px. In that width/gap block, the candidate’s loss changes from ${step.lossBefore.toFixed(5)} to ${step.lossAfter.toFixed(5)}. A separate chart/padding block follows, then geometry is evaluated and rendered again.`
+    : 'Waiting for the first backward pass.';
+  const history=state.history,peak=Math.max(...history,1e-8);
+  const points=history.map((value,i)=>`${i/Math.max(1,history.length-1)*300},${58-value/peak*52}`);
+  const path='M'+points.join(' L');
+  $('loss-line').setAttribute('d',path);
+  $('loss-fill').setAttribute('d',path+' L300,62 L0,62 Z');
+  const samples=[history[0],history[Math.floor((history.length-1)/3)],history[Math.floor(2*(history.length-1)/3)],history.at(-1)];
+  $('loss-trail').textContent=traditional?'Forward CSS-style layout only':samples.map(value=>value.toFixed(4)).join(' → ');
+  $('forward').classList.toggle('active',traditional||!state.running);
+  $('backward').classList.toggle('active',!traditional&&state.running);
+  document.body.classList.toggle('traditional',traditional);
+  $('topology').textContent=traditional?'Columns chosen by explicit viewport breakpoints.':`Discrete host search: 1 / 2 / 3 columns → ${columns}\nContinuous parameters: Handwired backprop.`;
+}
+
+// ── 7. DEMO CONTROLS ─────────────────────────────────────────────────────
+function changeWidth(value) {
+  state.width=Math.round(value);
+  if(state.mode==='differentiable') beginSolve();
+  render();
+}
+$('width').addEventListener('input',event=>{
+  state.auto=false;$('auto').setAttribute('aria-pressed','false');
+  changeWidth(Number(event.target.value));
+});
+for(const mode of ['traditional','differentiable']) $(mode).addEventListener('click',()=>{
+  state.mode=mode;
+  for(const name of ['traditional','differentiable']) $(name).setAttribute('aria-pressed',String(name===mode));
+  if(mode==='differentiable') beginSolve();
+  render();
+});
+document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>{
+  state.preset=button.dataset.preset;
+  state.wasteWeight=presets[state.preset].waste;
+  state.customObjective=false;
+  beginSolve();render();
+}));
+$('space-efficiency').addEventListener('input',event=>{
+  state.wasteWeight=Number(event.target.value);
+  state.customObjective=true;
+  // Hold the viewport still so a manual objective edit has an obvious effect.
+  state.auto=false;$('auto').setAttribute('aria-pressed','false');
+  beginSolve();render();
+});
+let autoStarted=0,autoStartWidth=state.width;
+$('auto').addEventListener('click',()=>{
+  state.auto=!state.auto;
+  autoStarted=performance.now();autoStartWidth=state.width;
+  $('auto').setAttribute('aria-pressed',String(state.auto));
+});
+let lastTick=0,lastAuto=0;
+function frame(time) {
+  try {
+    // A slow triangular sweep leaves visible time for gradient steps. Resize
+    // events change the objective, so cross-event loss need not be monotonic.
+    if(state.auto&&time-lastAuto>=240) {
+      const phase=((autoStartWidth-480)+(time-autoStarted)*.045)%1840;
+      changeWidth(480+(phase<=920?phase:1840-phase));
+      lastAuto=time;
+    }
+    if(time-lastTick>=60) {solveTick();render();lastTick=time;}
+    requestAnimationFrame(frame);
+  } catch(error) {
+    $('error').hidden=false;$('error').className='error';$('error').textContent=error.message;
+    console.error(error);
+  }
+}
+beginSolve();render();requestAnimationFrame(frame);
+// Read-only inspection surface for browser verification and source exploration.
+window.layoutLab={get state(){return state},layout,traditionalLayout};
+</script>
+</body>
+</html>

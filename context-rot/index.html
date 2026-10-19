@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>More Context ≠ Better Answers</title>
+<style>
+  :root { color-scheme: dark; --bg:#181a1b; --ink:#ece9df; --muted:#aaaead; --line:#555c60; --blue:#a0bfd1; --yellow:#eed27e; --red:#df9993; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.6 'Chalkboard SE','Segoe Print','Comic Sans MS',cursive; }
+  main { max-width:1080px; margin:auto; padding:35px 32px 65px; }
+  a { color:var(--blue); text-underline-offset:5px; }
+  .topline { display:flex; justify-content:space-between; gap:20px; font:12px/1.6 ui-monospace,monospace; letter-spacing:.08em; color:var(--muted); }
+  header { margin:55px 0 36px; }
+  h1 { font-size:clamp(30px,4.5vw,49px); font-weight:500; line-height:1.25; letter-spacing:-1.5px; margin:0 0 14px; }
+  h1 em { font-style:normal; color:var(--yellow); border-bottom:2px solid var(--yellow); border-radius:0 0 45% 12%; }
+  p { margin:10px 0; } h2 { font-size:23px; font-weight:500; margin:0 0 14px; } h3 { font-size:19px; font-weight:500; }
+  .muted, .small { color:var(--muted); } .small { font:13px/1.65 ui-monospace,monospace; }
+  .blue { color:var(--blue); } .yellow { color:var(--yellow); }
+  .diagram { display:grid; grid-template-columns:repeat(3,1fr); gap:27px; margin:30px 0 16px; }
+  .diagram article { text-align:center; }
+  .caption { font:11px/1.6 ui-monospace,monospace; letter-spacing:.1em; color:var(--muted); margin-bottom:12px; }
+  .context-drawing { height:77px; padding:13px; border:1px solid var(--line); border-radius:3px 8px 4px 7px; display:flex; align-items:center; gap:7px; transform:rotate(-.6deg); }
+  .diagram article:nth-child(2) .context-drawing { transform:rotate(.5deg); }
+  .scribbles { flex:1; display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:center; }
+  .scribbles i { display:block; height:2px; width:24%; background:#737a7e; transform:rotate(-3deg); }
+  .fact-chip { color:var(--yellow); border:1px solid var(--yellow); padding:2px 8px; white-space:nowrap; font-size:14px; border-radius:3px 6px 2px 5px; }
+  .arrow { color:var(--muted); line-height:1.3; font-size:25px; } .ai { display:inline-block; border:1px solid var(--blue); color:var(--blue); padding:0 17px; border-radius:5px 3px 7px 3px; }
+  .diagram-answer { font-size:15px; margin-top:9px; } .thesis { text-align:center; color:var(--muted); margin:25px 0 42px; }
+  .thesis span { color:var(--yellow); }
+  .experiment { border-top:1px dashed var(--line); padding-top:30px; }
+  .section-heading { display:flex; align-items:baseline; gap:15px; margin-bottom:20px; }
+  .step { color:var(--blue); font:13px ui-monospace,monospace; }
+  label { display:block; margin-bottom:8px; } input, textarea, button, select { font:inherit; }
+  select, input[type=text], textarea, input[type=number] { width:100%; padding:10px 13px; border:1px solid var(--line); border-radius:4px 2px 6px 3px; background:#1e2122; color:var(--ink); }
+  textarea { min-height:75px; resize:vertical; } input:focus, textarea:focus { border-color:var(--yellow); }
+  :focus-visible { outline:2px solid var(--blue); outline-offset:4px; }
+  .fields { display:grid; grid-template-columns:1fr 1fr; gap:26px; }
+  .task-picker { margin-bottom:26px; } .task-picker select { max-width:100%; } .task-picker .small { max-width:850px; }
+  .cards.structured { grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); } .structured .answer { font:12px/1.65 ui-monospace,monospace; max-height:360px; overflow:auto; }
+  .controls { display:grid; grid-template-columns:1fr 1fr; gap:50px; margin:28px 0; }
+  .control-label { font:12px ui-monospace,monospace; letter-spacing:.08em; margin-bottom:16px; color:var(--blue); }
+  .range-label { display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+  output { font-size:23px; color:var(--yellow); } input[type=range] { width:100%; accent-color:var(--yellow); margin:15px 0 4px; }
+  .ticks { display:flex; justify-content:space-between; font:11px ui-monospace,monospace; color:var(--muted); }
+  button { cursor:pointer; color:var(--ink); background:transparent; border:1px solid var(--line); padding:9px 14px; border-radius:3px 6px 3px 5px; }
+  button:hover { border-color:var(--ink); background:#252829; } button:disabled { opacity:.45; cursor:wait; }
+  .segments { display:flex; gap:7px; margin-top:23px; } .segments button { flex:1; padding:8px 6px; font-size:15px; }
+  button[aria-pressed=true] { color:var(--yellow); border-color:var(--yellow); }
+  details { border-top:1px solid #363b3e; padding:15px 0; } summary { cursor:pointer; color:var(--blue); }
+  pre { white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.8 ui-monospace,monospace; background:#141617; padding:18px; max-height:370px; overflow:auto; border:1px dashed var(--line); border-radius:4px; }
+  mark { color:var(--yellow); background:#393423; padding:2px 0; }
+  .engine { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:20px 0 10px; }
+  .engine-name { color:var(--yellow); font-size:15px; } .engine button { font-size:14px; padding:5px 10px; }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:23px 0 14px; }
+  .primary { background:var(--yellow); border-color:var(--yellow); color:#20201b; padding:11px 30px; } .primary:hover { background:#f6dda0; border-color:var(--yellow); }
+  #stop { color:var(--red); } [hidden] { display:none !important; }
+  #status { min-height:24px; } .results { margin:28px 0 24px; } .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:14px; }
+  .card { border:1px solid var(--line); border-radius:5px 2px 7px 3px; padding:17px; min-width:0; }
+  .card h3 { color:var(--blue); margin:0 0 13px; } .answer { white-space:pre-wrap; overflow-wrap:anywhere; margin:0 0 16px; font-size:19px; }
+  .verdict { color:var(--yellow); font-size:14px; } .error, .miss { color:var(--red); } .card .small { font-size:11px; }
+  .settings { display:grid; grid-template-columns:1fr 1fr; gap:24px; padding:20px 0; } .settings input[type=number] { max-width:100px; }
+  .explanation { margin-top:35px; border-top:1px dashed var(--line); padding-top:30px; max-width:780px; }
+  .takeaway { font-size:22px; margin:23px 0 5px; } footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; margin-top:38px; font:12px/1.8 ui-monospace,monospace; color:var(--muted); } footer a { margin-right:20px; }
+  @media(max-width:700px) { main { padding:24px 18px 40px; } header { margin-top:35px; } .diagram { gap:10px; } .context-drawing { padding:8px 3px; gap:3px; } .fact-chip { font-size:11px; padding:3px; } .scribbles i { width:35%; } .caption { font-size:9px; } .fields,.controls,.settings { grid-template-columns:1fr; gap:22px; } .segments { margin-top:0; } .thesis { font-size:15px; } .actions button { flex:1 1 42%; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="topline"><a href="../index.html">← LEARNING ARTIFACTS</a><span>AN EXPERIMENT IN CONTEXT</span></div>
+  <header><h1>More Context <em>≠</em> Better Answers</h1><p class="muted">What happens when one useful fact gets buried in more information?</p></header>
+  <section aria-label="Same fact, increasing noise">
+    <div class="diagram">
+      <article><div class="caption">SHORT CONTEXT</div><div class="context-drawing"><span class="scribbles"><i></i><i></i></span><span class="fact-chip">same fact</span><span class="scribbles"><i></i><i></i></span></div><div class="arrow">↓</div><span class="ai">AI</span><div class="diagram-answer">Answer: <span data-visual="0">?</span></div></article>
+      <article><div class="caption">LONG CONTEXT</div><div class="context-drawing"><span class="scribbles"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fact-chip">same fact</span><span class="scribbles"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><div class="arrow">↓</div><span class="ai">AI</span><div class="diagram-answer">Answer: <span data-visual="2">?</span></div></article>
+      <article><div class="caption">VERY LONG CONTEXT</div><div class="context-drawing"><span class="scribbles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="fact-chip">same fact</span><span class="scribbles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div><div class="arrow">↓</div><span class="ai">AI</span><div class="diagram-answer">Answer: <span data-visual="4">?</span></div></article>
+    </div>
+    <p class="thesis"><span id="same-signal">Same task</span> + more noise → potentially harder retrieval</p>
+  </section>
+  <section class="experiment" aria-labelledby="experiment-title">
+    <div class="section-heading"><span class="step">01 / TRY IT</span><h2 id="experiment-title">Bury a fact. Ask a question.</h2></div>
+    <div class="task-picker">
+      <label for="task">Choose an experiment</label>
+      <select id="task"><option value="simple">1. Find one fact — original baseline</option><option value="linked">2. Follow a chain — connect records</option><option value="audit" selected>3. Release audit — connect records, apply rules, avoid inventing data</option></select>
+      <p id="task-description" class="small"></p>
+      <div id="case-controls"><label for="case-number">Case number <span class="small">/ deterministic, 1–20</span></label><input id="case-number" type="number" min="1" max="20" step="1" value="1"><p class="small">0× is the clean baseline with no distracting records. Keep the case fixed when comparing lengths. Change it to test another set of names, mappings, and dates.</p></div>
+    </div>
+    <div class="fields" id="custom-fields">
+      <div><label for="fact">Relevant fact <span class="yellow">↙ keep this constant</span></label><textarea id="fact" maxlength="2000">The project launch date is October 28.</textarea></div>
+      <div><label for="question">Question</label><textarea id="question" maxlength="1000">When is the project launch date?</textarea></div>
+    </div>
+    <div class="controls">
+      <div><label class="control-label" for="size">CONTEXT SIZE <span class="small">/ noise multiplier</span></label><div class="range-label"><span>Short</span><output id="size-value" for="size">1×</output><span>Very Long</span></div><input id="size" type="range" min="0" max="4" step="1" value="0" aria-valuetext="1 times noise"><div class="ticks" aria-hidden="true"><span>1×</span><span>5×</span><span>10×</span><span>20×</span><span>50×</span></div></div>
+      <div><div class="control-label" id="position-label">FACT POSITION</div><div class="segments" role="group" aria-labelledby="position-label"><button data-position="beginning" aria-pressed="false">Beginning</button><button data-position="middle" aria-pressed="true">Middle</button><button data-position="end" aria-pressed="false">End</button><button data-position="spread" aria-pressed="false">Spread out</button></div></div>
+    </div>
+    <details><summary>See what the AI receives <span class="small" id="counts"></span></summary><p class="small">Complete prompt below. Yellow marks the relevant records; the model receives plain text. Preset tasks keep all relevant records and rules identical across context sizes.</p><pre id="preview" tabindex="0"></pre></details>
+    <details id="answer-key"><summary>Answer key &amp; scoring rules <span class="small">/ never sent to the model</span></summary><pre id="key-preview"></pre><p class="small">Preset tasks require JSON. We compare each requested field against a deterministic answer key. Inventing an approval code where none was supplied is flagged as an unsupported claim. A wrong date, a format error, and an unsupported claim are reported separately; they are not all called hallucinations.</p></details>
+    <details><summary>Advanced settings &amp; local model setup</summary><div class="settings">
+      <div id="expected-setting"><label for="expected">Expected answer fragment</label><input type="text" id="expected" value="October 28" maxlength="500"><p class="small">Set this when editing the fact. Evaluation checks whether the answer contains this text, ignoring case and repeated whitespace. It can miss paraphrases and accept negations. It is never sent to the AI.</p></div>
+      <div><label for="temperature">Temperature <span class="small">(WebLLM only)</span></label><input type="number" id="temperature" min="0" max="2" step="0.1" value="0.2"><p class="small">Chrome uses its default sampling settings. Low temperature reduces variation; it does not guarantee identical answers.</p></div>
+    </div><p class="small">Chrome is checked first. Optional WebLLM downloads a model (potentially hundreds of MB) from the internet and runs it locally with WebGPU. No API key needed.</p><button id="webllm">Enable WebLLM fallback &amp; download model</button><p class="small">Model: SmolLM2-360M-Instruct-q4f16_1-MLC · CDN library: @mlc-ai/web-llm 0.2.85</p></details>
+    <div class="engine"><span class="engine-name" id="engine-name">Checking for a local model…</span><button id="connect" disabled>Initialize Chrome AI</button></div>
+    <p class="small" id="engine-detail">Feature detection only; no model is downloaded on page load.</p>
+    <div class="actions"><button class="primary" id="ask">Ask AI</button><button id="compare">Compare Context Sizes</button><button id="positions">Test Fact Position</button><button id="repeat">Run 5 Times</button><button id="stop" hidden>Stop</button></div>
+    <p id="status" class="small" role="status" aria-live="polite">The fact stays the same. Only the surrounding context changes.</p>
+    <section class="results" id="results" aria-label="Experiment results" hidden><h2 id="results-title">AI Answer</h2><p class="small" id="run-meta"></p><div id="cards" class="cards"></div><p class="small" id="run-summary"></p></section>
+    <details><summary>Developer / debug</summary><p class="small">Last trial. Latency measures the prompt call, including any per-trial session preparation, excluding the initial model download.</p><pre id="debug">No trial yet.</pre></details>
+  </section>
+  <section class="explanation"><h2>Why can this happen?</h2><p>An LLM decides which parts of your input matter for predicting its answer.</p><p>As the input grows, more information competes for attention. Important details can become harder to use reliably — especially when surrounded by similar or distracting information.</p><p class="takeaway">More context is not always better context.</p><p class="yellow">Context quality &gt; context quantity.</p></section>
+  <footer><span>Inspired by <a href="https://aclanthology.org/2024.tacl-1.9/" target="_blank" rel="noopener">Lost in the Middle ↗</a><a href="https://research.trychroma.com/context-rot" target="_blank" rel="noopener">Context Rot ↗</a></span><span>A perfect score is a valid result.</span></footer>
+</main>
+<script type="module">
+/* Architecture (all code stays in this file):
+   UI
+    ↓
+   Experiment Controller
+    ↓
+   Context Generator
+    ↓
+   AI Engine
+    ↓
+   Evaluator
+
+   Adapters only handle inference. They do not know the expected answer.
+   The simulation alone receives the fact to illustrate the UI honestly.
+*/
+const $ = id => document.getElementById(id);
+const LEVELS = [1, 5, 10, 20, 50];
+const PRESET_LEVELS = [0, 1, 3, 5, 10];
+const levelsFor = task => task === 'simple' ? LEVELS : PRESET_LEVELS;
+const state = { position: 'spread', engine: null, busy: false, controller: null };
+const normalize = text => text.toLowerCase().replace(/\s+/g, ' ').trim();
+
+// Context generator: a fixed ordered bank, no randomness or answer-dependent noise.
+// Larger levels extend the same prefix. Each multiplier adds four office notes.
+function noiseNote(index) {
+  const names = ['Maya', 'Dev', 'Robin', 'Alex', 'Sam', 'Priya', 'Noah', 'Lee'];
+  const topics = ['accessibility', 'search filters', 'billing exports', 'mobile navigation', 'help articles', 'workspace settings', 'audit logs', 'notification preferences'];
+  const name = names[index % names.length];
+  const topic = topics[Math.floor(index / names.length) % topics.length];
+  const notes = [
+    `${name} recorded design review feedback on October 18. The ${topic} mockups need clearer labels.`,
+    `An archived beta test was planned for October 21. ${name} is cataloguing the ${topic} feedback; this note records historical testing only.`,
+    `A separate office relocation project starts November 3. ${name} will update its ${topic} checklist.`,
+    `Support ticket #${4100 + index} concerns ${topic}. ${name} reproduced the issue and attached a screenshot.`,
+    `${name} updated the ${topic} documentation. Examples now use synthetic accounts and contain no customer data.`,
+    `Meeting ${index + 1}: ${name} suggested shorter ${topic} labels. Follow-up discussion is scheduled for November 12.`,
+    `The ${topic} status report lists two minor issues. ${name} will review the checklist after the weekly team sync.`,
+    `Archive entry ${index + 1}: ${name} moved the ${topic} notes into a shared folder. The older draft is retained for reference.`
+  ];
+  return notes[index % notes.length];
+}
+// Presets are generated from data, and their answer keys are derived from the same
+// records with ordinary JS. No desired answer or failure is baked into inference.
+function makeTask(kind, caseNumber) {
+  const projects = ['Orion', 'Lyra', 'Vega', 'Atlas'];
+  const owners = ['Mina', 'Ishan', 'Luca', 'Tess'];
+  const offset = caseNumber - 1;
+  const records = [];
+  const rows = projects.map((project, index) => {
+    const id = index + offset * 4;
+    const packageId = `PK-${300 + id}`;
+    const lane = `L-${700 + ((index + offset) % 4)}`;
+    const team = `T-${900 + ((index + 2 * offset) % 4)}`;
+    const owner = owners[(index + offset) % owners.length];
+    const date = `2027-03-${String(10 + ((index * 3 + offset) % 18)).padStart(2, '0')}`;
+    const passed = (index + offset) % 3 !== 1;
+    const blockers = (index + offset) % 4 === 2 ? 1 : 0;
+    records.push(`Project ${project}: delivery package ${packageId}.`,
+      `Package ${packageId}: uses lane ${lane}; responsible team ${team}; QA ${passed ? 'PASS' : 'FAIL'}; unresolved blockers ${blockers}.`,
+      `Lane ${lane}: scheduled release date ${date}.`,
+      `Team ${team}: release owner ${owner}.`);
+    return { project, owner, ship_date: passed && blockers === 0 ? date : 'HOLD', decision: passed && blockers === 0 ? 'SHIP' : 'HOLD', approval_code: 'UNKNOWN' };
+  });
+  if (kind === 'linked') {
+    const key = { project: projects[0], owner: rows[0].owner };
+    return { records: [records[0], records[1], records[3]], expected: key, question: `Who owns the release for project ${projects[0]}? Follow project → package → responsible team → release owner. Return only JSON with exactly these fields: {"project":"…","owner":"…"}.` };
+  }
+  records.unshift('Release policy: SHIP only if QA is PASS AND unresolved blockers equal 0. Otherwise HOLD. For SHIP, ship_date is the assigned lane’s scheduled release date. For HOLD, ship_date is the literal string HOLD.',
+    'Reporting policy: approval codes are not provided in these notes. Always report approval_code as UNKNOWN. Do not infer or invent an approval code.');
+  return { records, expected: rows, question: `Prepare the release audit for Orion, Lyra, Vega, and Atlas, in that order. Connect each project to its package, lane, and responsible team. Apply the release policy. Return only a JSON array of four objects, each with exactly these fields: project, owner, ship_date, decision, approval_code. Use the exact values from the notes and policies. No explanation.` };
+}
+function presetNoise(index, caseNumber) {
+  // Similar-looking records, but disjoint IDs: no conflicting target facts.
+  const id = 10000 + (caseNumber - 1) * 1000 + index;
+  const owner = ['Nora', 'Amir', 'Jo', 'Rae'][index % 4];
+  return `Project Satellite-${id}: delivery package PK-${id}. Package PK-${id}: lane L-${id}; responsible team T-${id}; QA ${index % 3 ? 'PASS' : 'FAIL'}; unresolved blockers ${index % 2}. Lane L-${id}: scheduled release date 2027-04-${String(1 + index % 28).padStart(2, '0')}. Team T-${id}: release owner ${owner}. Support note ${id}: documentation review pending.`;
+}
+function taskData(config) {
+  return config.task === 'simple' ? { records: [config.fact], question: config.question, expected: config.expected } : makeTask(config.task, config.caseNumber);
+}
+function buildContext(config) {
+  const task = taskData(config);
+  const notes = Array.from({ length: config.level * 4 }, (_, i) => config.task === 'simple' ? noiseNote(i) : presetNoise(i, config.caseNumber));
+  if (config.task === 'simple' && notes.some(note => normalize(note).includes(normalize(config.expected)) || normalize(note).includes(normalize(config.fact)))) {
+    throw new Error('The office notes also contain your expected fragment or fact. Choose a distinct fact and answer fragment.');
+  }
+  const prefix = 'Read the following office notes and answer the question using only information in these notes. If information is missing, report UNKNOWN. Follow the requested output format.\n\nOFFICE NOTES\n';
+  const parts = [{ text: prefix, relevant: false }];
+  const buckets = Array.from({ length: notes.length + 1 }, () => []);
+  task.records.forEach((record, index) => {
+    const slot = config.position === 'spread' ? Math.floor((index + 1) * notes.length / (task.records.length + 1))
+      : config.position === 'beginning' ? 0 : config.position === 'end' ? notes.length : Math.floor(notes.length / 2);
+    buckets[slot].push(record);
+  });
+  for (let index = 0; index <= notes.length; index++) {
+    for (const record of buckets[index]) parts.push({ text: record + '\n\n', relevant: true });
+    if (index < notes.length) parts.push({ text: notes[index] + '\n\n', relevant: false });
+  }
+  parts.push({ text: 'QUESTION\n' + task.question, relevant: false });
+  return { parts, text: parts.map(part => part.text).join(''), expected: task.expected };
+}
+function readConfig() {
+  return { task: $('task').value, caseNumber: Number($('case-number').value), fact: $('fact').value.trim(), question: $('question').value.trim(), expected: $('expected').value.trim(), level: levelsFor($('task').value)[Number($('size').value)], position: state.position, temperature: Number($('temperature').value) };
+}
+function validate(config) {
+  if (config.task === 'simple') {
+    if (!config.fact || !config.question || !config.expected) throw new Error('Fill in the fact, question, and expected answer fragment (under Advanced settings).');
+    if (!normalize(config.fact).includes(normalize(config.expected))) throw new Error('The expected fragment must appear in your relevant fact. Update it under Advanced settings.');
+  } else if (!Number.isInteger(config.caseNumber) || config.caseNumber < 1 || config.caseNumber > 20) throw new Error('Choose a case number from 1 to 20.');
+  if (!Number.isFinite(config.temperature) || config.temperature < 0 || config.temperature > 2) throw new Error('Temperature must be between 0 and 2.');
+}
+const approxTokens = text => Math.ceil(text.length / 4);
+function updatePreview() {
+  const config = readConfig();
+  const simple = config.task === 'simple';
+  $('custom-fields').hidden = !simple; $('expected-setting').hidden = !simple;
+  $('case-controls').hidden = simple; $('answer-key').hidden = simple;
+  $('task-description').textContent = simple ? 'Original single-fact retrieval baseline. Edit the fact and question below.' : config.task === 'linked'
+    ? 'Connect project → package → team → owner. Similar records for other projects grow with context.'
+    : 'A longer task: audit four projects, follow linked records, apply two shipping conditions, and leave missing approval codes UNKNOWN. Similar records grow; the task and correct answers stay fixed.';
+  $('same-signal').textContent = simple ? 'Same fact' : 'Same task';
+  $('experiment-title').textContent = simple ? 'Bury a fact. Ask a question.' : 'Same task. More competing records.';
+  document.querySelectorAll('[data-position]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.position === state.position)));
+  document.querySelectorAll('.ticks span').forEach((tick, index) => tick.textContent = levelsFor(config.task)[index] + '×');
+  $('size-value').textContent = `${config.level}×`;
+  $('size').setAttribute('aria-valuetext', `${config.level} times noise`);
+  document.querySelectorAll('[data-visual]').forEach(node => node.textContent = '?');
+  document.querySelectorAll('.fact-chip').forEach(node => node.textContent = simple ? 'same fact' : 'same task');
+  try {
+    validate(config);
+    const context = buildContext(config);
+    const nodes = context.parts.map(part => {
+      if (!part.relevant) return document.createTextNode(part.text);
+      const mark = document.createElement('mark'); mark.textContent = part.text; return mark;
+    });
+    $('preview').replaceChildren(...nodes);
+    $('key-preview').textContent = JSON.stringify(context.expected, null, 2);
+    $('counts').textContent = ` / ${context.text.length.toLocaleString()} characters · ${approxTokens(context.text).toLocaleString()} tokens (approx.)`;
+  } catch (error) { $('preview').textContent = error.message; $('counts').textContent = ''; }
+}
+
+// AI adapters. Add another engine by implementing these four methods.
+class AIEngine {
+  async isAvailable() { return false; }
+  async initialize() {}
+  async prompt() { throw new Error('Not implemented'); }
+  getName() { return 'Unknown engine'; }
+}
+class ChromeAIEngine extends AIEngine {
+  constructor() {
+    super();
+    this.api = globalThis.LanguageModel; // Current Chrome Prompt API; never assume it exists.
+    this.options = { expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
+  }
+  async isAvailable() {
+    if (!this.api?.availability || !this.api?.create) return false;
+    this.availability = await this.api.availability(this.options);
+    return ['available', 'downloadable', 'downloading'].includes(this.availability);
+  }
+  async initialize(signal) {
+    // Called by a user click, so Chrome may request/download the on-device model.
+    this.base = await this.api.create({ ...this.options, signal, monitor(monitor) {
+      monitor.addEventListener('downloadprogress', event => {
+        $('status').textContent = `Downloading Chrome model… ${Math.round(event.loaded * 100)}%`;
+      });
+    } });
+  }
+  async prompt(text, { signal }) {
+    this.lastUsage = null;
+    // Clone an empty session for every trial: previous answers never leak forward.
+    const session = await this.base.clone({ signal });
+    let overflow = false;
+    session.addEventListener('contextoverflow', () => { overflow = true; });
+    try {
+      if (session.measureContextUsage && Number.isFinite(session.contextWindow)) {
+        const tokens = await session.measureContextUsage(text);
+        this.lastUsage = { inputTokens: tokens, contextWindow: session.contextWindow };
+        if (tokens + 1024 > session.contextWindow) throw new Error('Context exceeds this model’s window (including a 1,024-token response reserve). Not scored; prompt was not shortened.');
+      }
+      const answer = await session.prompt(text, { signal });
+      if (overflow) throw new Error('Chrome reported context overflow. Not scored because input may have been removed.');
+      return answer;
+    } finally { session.destroy(); }
+  }
+  getName() { return 'Chrome built-in AI / Gemini Nano'; }
+}
+class WebLLMEngine extends AIEngine {
+  async isAvailable() { return Boolean(navigator.gpu); }
+  async initialize() {
+    // Optional dependency: downloaded only when the user enables this fallback.
+    const { CreateMLCEngine } = await import('https://esm.run/@mlc-ai/web-llm@0.2.85');
+    this.model = await CreateMLCEngine('SmolLM2-360M-Instruct-q4f16_1-MLC', {
+      initProgressCallback: progress => { $('status').textContent = progress.text; }
+    });
+  }
+  async prompt(text, { signal, temperature }) {
+    const interrupt = () => this.model.interruptGenerate();
+    signal.addEventListener('abort', interrupt, { once: true });
+    try {
+      // A fresh messages array + resetChat avoids conversation carry-over.
+      await this.model.resetChat();
+      if (signal.aborted) throw new DOMException('Stopped', 'AbortError');
+      const result = await this.model.chat.completions.create({ messages: [{ role: 'user', content: text }], temperature, max_tokens: 1024 });
+      if (signal.aborted) throw new DOMException('Stopped', 'AbortError');
+      const choice = result.choices[0];
+      if (choice.finish_reason === 'length') throw new Error('Model reached its output limit. Not scored; response may be incomplete.');
+      const answer = choice.message.content;
+      if (typeof answer !== 'string' || !answer.trim()) throw new Error('Model returned no text. Not scored.');
+      return answer;
+    } finally { signal.removeEventListener('abort', interrupt); }
+  }
+  getName() { return 'WebLLM / SmolLM2 360M'; }
+}
+class SimulationEngine extends AIEngine {
+  async isAvailable() { return true; }
+  async prompt(text, { fact, task, signal }) {
+    if (signal.aborted) throw new DOMException('Stopped', 'AbortError');
+    // This is a literal fact echo, not an inference model or a failure simulation.
+    return task === 'simple' ? fact : 'Simulation: no inference performed. Open the answer key to inspect the expected result.';
+  }
+  getName() { return 'Simulation — no local model available'; }
+}
+
+// Missing-code abstentions may violate the requested format without inventing data.
+function unsupportedApproval(value) {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value !== 'string' || !value.trim()) return false;
+  return !['unknown', 'n/a', 'none', 'not provided', 'not available', 'not specified', 'not recorded'].includes(normalize(value));
+}
+// Deterministic evaluation. Wrong values are distinct from unsupported missing data.
+function evaluate(answer, expected, task = 'simple') {
+  if (task === 'simple') {
+    const correct = normalize(answer).includes(normalize(expected));
+    return { correct, unsupported: 0, formatError: false, message: correct ? '✓ Expected fragment found (limited check)' : `✕ Expected fragment absent: ${expected}` };
+  }
+  let parsed;
+  try { parsed = JSON.parse(answer.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')); }
+  catch { return { correct: false, unsupported: 0, formatError: true, message: '✕ Format error: expected JSON. Not evidence of hallucination.' }; }
+  const actualRows = task === 'audit' ? parsed : [parsed];
+  const expectedRows = task === 'audit' ? expected : [expected];
+  if (!Array.isArray(actualRows) || actualRows.length !== expectedRows.length || actualRows.some(row => !row || typeof row !== 'object' || Array.isArray(row))) {
+    return { correct: false, unsupported: 0, formatError: true, message: '✕ Format error: wrong record count or shape.' };
+  }
+  let matched = 0, total = 0, unsupported = 0;
+  const mismatches = [];
+  expectedRows.forEach((row, index) => {
+    const actual = actualRows[index];
+    for (const [field, value] of Object.entries(row)) {
+      total++;
+      if (typeof actual[field] === 'string' && (field === 'project' ? normalize(actual[field]).replace(/^project /, '') === normalize(value) : normalize(actual[field]) === normalize(value))) matched++;
+      else {
+        mismatches.push(`${row.project}.${field}: expected ${value}; received ${JSON.stringify(actual[field]) ?? 'missing'}`);
+        if (field === 'approval_code' && unsupportedApproval(actual[field])) unsupported++;
+      }
+    }
+    if (Object.keys(actual).some(field => !(field in row))) mismatches.push(`${row.project}: unexpected fields`);
+  });
+  const correct = mismatches.length === 0;
+  return { correct, matched, total, unsupported, formatError: false, mismatches,
+    message: `${correct ? '✓ Correct' : '✕ Mismatch'} · ${matched}/${total} fields match${unsupported ? ` · ${unsupported} unsupported approval claim(s)` : ''}` };
+}
+function setBusy(busy) {
+  state.busy = busy;
+  document.querySelectorAll('input, textarea, select, button').forEach(element => { element.disabled = busy; });
+  $('stop').hidden = !busy; $('stop').disabled = false;
+  if (!busy) {
+    $('connect').disabled = !(state.engine instanceof ChromeAIEngine) || Boolean(state.engine.base);
+    $('webllm').disabled = Boolean(state.engine?.base || state.engine?.model);
+  }
+}
+function announceEngine(detail) {
+  $('engine-name').textContent = state.engine.getName();
+  $('engine-detail').textContent = detail;
+  $('connect').hidden = !(state.engine instanceof ChromeAIEngine);
+  $('connect').disabled = !(state.engine instanceof ChromeAIEngine) || Boolean(state.engine.base);
+}
+async function detectEngine() {
+  const chrome = new ChromeAIEngine();
+  try {
+    if (await chrome.isAvailable()) {
+      state.engine = chrome;
+      announceEngine(`Chrome availability: ${chrome.availability}. Initialize before running; a first-time model download may be required.`);
+      return;
+    }
+  } catch (error) { $('status').textContent = `Chrome detection: ${error.message}`; }
+  state.engine = new SimulationEngine();
+  announceEngine('No inference model is active. Simulation echoes your supplied fact and cannot measure retrieval quality. Enable WebLLM in Advanced settings to try a real model.');
+}
+async function initializeEngine(webllm = false) {
+  if (state.busy) return;
+  setBusy(true); state.controller = new AbortController();
+  $('status').textContent = 'Initializing local model…';
+  let candidate;
+  try {
+    if (webllm) {
+      // Chrome is always preferred when this browser can provide it.
+      const chrome = new ChromeAIEngine();
+      candidate = await chrome.isAvailable() ? chrome : new WebLLMEngine();
+      if (!(await candidate.isAvailable())) throw new Error('WebGPU is unavailable in this browser.');
+    } else candidate = state.engine;
+    await candidate.initialize(state.controller.signal);
+    if (state.controller.signal.aborted) {
+      candidate.base?.destroy(); await candidate.model?.unload();
+      throw new DOMException('Stopped', 'AbortError');
+    }
+    state.engine = candidate;
+    announceEngine('Real model ready. Each trial uses a fresh conversation; model errors are shown without a correctness score.');
+    $('status').textContent = `Ready. ${candidate.base?.contextWindow ? 'Chrome context window: ' + candidate.base.contextWindow.toLocaleString() + ' tokens. ' : ''}Ask a question or run a comparison.`;
+  } catch (error) { $('status').textContent = `Initialization ${error.name === 'AbortError' ? 'stopped' : 'failed: ' + error.message}. No results generated.`; }
+  finally { setBusy(false); }
+}
+function makeCard(label) {
+  const card = document.createElement('article'); card.className = 'card';
+  const title = document.createElement('h3'); title.textContent = label;
+  const answer = document.createElement('p'); answer.className = 'answer'; answer.textContent = 'Waiting…';
+  const verdict = document.createElement('p'); verdict.className = 'verdict';
+  const meta = document.createElement('p'); meta.className = 'small';
+  card.append(title, answer, verdict, meta); $('cards').append(card);
+  return { answer, verdict, meta };
+}
+async function runTrial(config, card) {
+  const context = buildContext(config);
+  const started = performance.now();
+  let answer = '', error = '', correct = null, evaluation = null;
+  try {
+    answer = await state.engine.prompt(context.text, { ...config, signal: state.controller.signal });
+    if (state.controller.signal.aborted) throw new DOMException('Stopped', 'AbortError');
+    evaluation = evaluate(answer, context.expected, config.task);
+    correct = evaluation.correct;
+  } catch (failure) { error = failure.message; }
+  const latency = (performance.now() - started) / 1000;
+  const simulation = state.engine instanceof SimulationEngine;
+  card.answer.textContent = error ? 'No answer' : answer.trim();
+  card.verdict.textContent = error ? `Not scored: ${error}` : simulation ? 'Simulation · no inference' : evaluation.message;
+  card.verdict.classList.toggle('miss', Boolean(error) || (!correct && !simulation));
+  if (!simulation && evaluation?.mismatches?.length) {
+    const details = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = 'Field mismatches';
+    const evidence = document.createElement('pre'); evidence.textContent = evaluation.mismatches.join('\n'); details.append(summary, evidence); card.verdict.after(details);
+  }
+  card.meta.textContent = `${simulation ? 'Simulation' : 'Real model'} · ${latency.toFixed(2)} sec\n${context.text.length.toLocaleString()} chars · ${approxTokens(context.text).toLocaleString()} tokens (approx.)${state.engine instanceof ChromeAIEngine && state.engine.lastUsage ? '\nMeasured input: ' + state.engine.lastUsage.inputTokens + ' / ' + state.engine.lastUsage.contextWindow + ' tokens' : ''}`;
+  $('debug').textContent = JSON.stringify({ engine: state.engine.getName(), simulation, contextCharacters: context.text.length, approxTokens: approxTokens(context.text), factPosition: config.position, noiseMultiplier: config.level, task: config.task, caseNumber: config.caseNumber, expectedAnswer: context.expected, evaluation: simulation ? null : evaluation, measuredUsage: state.engine.lastUsage ?? null, temperature: state.engine instanceof WebLLMEngine ? config.temperature : 'engine default / not applicable', latencySeconds: latency, rawModelResponse: simulation ? null : answer, simulationEcho: simulation ? answer : null, correct: simulation ? null : correct, error: error || null }, null, 2);
+  if (!simulation && !error && config.position === state.position) {
+    const visual = document.querySelector(`[data-visual="${levelsFor(config.task).indexOf(config.level)}"]`);
+    if (visual) visual.textContent = config.task === 'simple' ? answer.trim() : `${evaluation.correct ? '✓' : '✕'} ${evaluation.message.replace(/^[✓✕] /, '')}`;
+  }
+  return { correct, error, evaluation };
+}
+async function runExperiment(mode) {
+  if (state.busy) return;
+  const config = readConfig();
+  try { validate(config); buildContext(config); }
+  catch (error) { $('status').textContent = error.message; return; }
+  if (state.engine instanceof ChromeAIEngine && !state.engine.base) {
+    $('status').textContent = 'Initialize Chrome AI first using the button above.'; $('connect').focus(); return;
+  }
+  const trials = mode === 'compare' ? levelsFor(config.task).map(level => ({ ...config, level, label: level === 0 ? '0× · clean baseline' : `${level}×` }))
+    : mode === 'positions' ? ['beginning', 'middle', 'end', 'spread'].map(position => ({ ...config, position, label: position }))
+    : Array.from({ length: mode === 'repeat' ? 5 : 1 }, (_, i) => ({ ...config, label: mode === 'repeat' ? `Trial ${i + 1}` : `${config.level}× · ${config.position}` }));
+  setBusy(true); state.controller = new AbortController();
+  $('cards').classList.toggle('structured', config.task !== 'simple');
+  $('results').hidden = false; $('cards').replaceChildren(); $('run-summary').textContent = '';
+  const simulation = state.engine instanceof SimulationEngine;
+  $('results-title').textContent = simulation ? 'Simulation · fact echo' : mode === 'compare' ? 'Context size comparison' : mode === 'positions' ? 'Fact position comparison' : 'AI Answer';
+  $('run-meta').textContent = `${state.engine.getName()} · Task: ${config.task}${config.task === 'simple' ? ' · Fragment: ' + config.expected : ' · Case ' + config.caseNumber} · ${mode === 'positions' ? config.level + '× noise' : config.position + ' position'} · Settings locked for this run.`;
+  const cards = trials.map(trial => makeCard(trial.label));
+  const results = [];
+  try {
+    for (const [index, trial] of trials.entries()) {
+      if (state.controller.signal.aborted) break;
+      $('status').textContent = `Running ${index + 1} / ${trials.length}… ${trial.label}`;
+      results.push(await runTrial(trial, cards[index]));
+      // Allow rendering between trials, even in instant simulation mode.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    const stopped = state.controller.signal.aborted;
+    cards.slice(results.length).forEach(card => { card.answer.textContent = 'Not run'; card.verdict.textContent = 'Stopped'; });
+    const scored = results.filter(result => !result.error);
+    $('run-summary').textContent = simulation ? 'Simulation only. No task was executed by a model; these are not model accuracy results.' : `Correct: ${scored.filter(result => result.correct).length} / ${scored.length} scored · ${config.task === 'audit' ? scored.reduce((sum, result) => sum + (result.evaluation?.unsupported || 0), 0) + ' unsupported approval claims · ' : ''}${config.task !== 'simple' ? scored.filter(result => result.evaluation?.formatError).length + ' format errors · ' : ''}${results.length - scored.length} model errors · ${trials.length - results.length} not run. One small experiment does not establish a general trend. All-correct results are valid.`;
+    if (!simulation && mode === 'compare' && !stopped) {
+      const baseline = results[0];
+      const interpretation = baseline?.error ? 'The short baseline could not be scored; context degradation cannot be assessed.'
+        : !baseline?.correct ? 'The model also missed the short baseline. These results do not isolate a problem caused by longer context.'
+        : results.slice(1).some(result => !result.error && !result.correct) ? 'The short baseline passed and at least one longer input did not. Repeat across cases before attributing the change to context length.'
+        : 'No accuracy degradation observed among completed, scored context sizes.';
+      $('run-summary').textContent += ' ' + interpretation;
+    }
+    $('status').textContent = stopped ? 'Stopped. Completed results remain below.' : 'Done. These are the results observed for this run.';
+  } catch (error) { $('status').textContent = `Experiment stopped: ${error.message}`; }
+  finally { setBusy(false); }
+}
+for (const id of ['fact', 'question', 'size', 'expected', 'task', 'case-number']) $(id).addEventListener('input', updatePreview);
+document.querySelectorAll('[data-position]').forEach(button => button.addEventListener('click', () => {
+  state.position = button.dataset.position;
+  document.querySelectorAll('[data-position]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  updatePreview();
+}));
+for (const mode of ['ask', 'compare', 'positions', 'repeat']) $(mode).addEventListener('click', () => runExperiment(mode));
+$('connect').addEventListener('click', () => initializeEngine());
+$('webllm').addEventListener('click', () => initializeEngine(true));
+$('stop').addEventListener('click', () => {
+  state.controller?.abort();
+  $('status').textContent = 'Stopping… WebLLM downloads may need to finish before resources can be released.';
+});
+// Disable experiments during detection so the engine cannot change midway through a run.
+setBusy(true);
+updatePreview();
+await detectEngine();
+setBusy(false);
+</script>
+</body>
+</html>
